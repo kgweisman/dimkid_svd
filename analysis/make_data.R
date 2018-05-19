@@ -6,12 +6,8 @@ d_adult_mean <- read.csv("https://osf.io/kdzge/download") %>%
   group_by(condition, capacity) %>%
   summarise(mean = mean(response, na.rm = T)) %>%
   ungroup() %>%
-  group_by(capacity) %>%
-  mutate(cond_mean = mean(mean),
-         mean_cent = mean - cond_mean) %>%
-  ungroup() %>%
-  select(condition, capacity, mean_cent) %>%
-  spread(capacity, mean_cent) %>%
+  select(condition, capacity, mean) %>%
+  spread(capacity, mean) %>%
   remove_rownames() %>%
   data.frame() %>%
   mutate_all(funs(gsub(" ", "_", .))) %>%
@@ -26,15 +22,13 @@ d_79_mean_t <- d_old %>%
   group_by(character, capacity) %>%
   summarise(mean = mean(responseNum)) %>%
   ungroup() %>%
-  group_by(capacity) %>%
-  mutate(char_mean = mean(mean),
-         mean_cent = mean - char_mean) %>%
-  ungroup() %>%
-  select(character, capacity, mean_cent) %>%
-  spread(capacity, mean_cent) %>%
+  select(character, capacity, mean) %>%
+  spread(capacity, mean) %>%
   remove_rownames() %>%
   data.frame() %>%
   column_to_rownames("character")
+
+write.csv(d_79_mean_t, "/Users/kweisman/Documents/Research (Stanford)/Projects/Dimkid_svd/dimkid_svd/data/means_79y.csv")
 
 # make 4-6yo data: means by character & capacity
 # first run cogsci2018_rev.Rmd
@@ -43,12 +37,8 @@ d_46_mean_t <- d_young %>%
   group_by(character, capacity) %>%
   summarise(mean = mean(responseNum)) %>%
   ungroup() %>%
-  group_by(capacity) %>%
-  mutate(char_mean = mean(mean),
-         mean_cent = mean - char_mean) %>%
-  ungroup() %>%
-  select(character, capacity, mean_cent) %>%
-  spread(capacity, mean_cent) %>%
+  select(character, capacity, mean) %>%
+  spread(capacity, mean) %>%
   remove_rownames() %>%
   data.frame() %>%
   column_to_rownames("character")
