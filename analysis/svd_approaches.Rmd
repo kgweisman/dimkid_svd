@@ -66,6 +66,37 @@ character_names_ch <- levels(d_79$character)
 ```
 
 ```{r functions, include = F}
+mean_cent_fun <- function(df, 
+                          by = c("capacity", "character")){
+  
+  if(by == "capacity"){
+    not_by <- "character"
+  }
+  
+  if(by == "character"){
+    not_by <- "capacity"
+    df <- df %>%
+      gather(capacity, mean_rating, -character) %>%
+      spread(character, mean_rating)
+  }
+  
+  df_cent <- df %>%
+    gather_(key_col = by, 
+            value_col = "mean_rating", 
+            gather_cols = colnames(df)[colnames(df) != not_by]) %>%
+    # begin mean-centering by capacity
+    group_by_(as.name(by)) %>%
+    mutate(group_mean = mean(mean_rating),
+           mean_cent = mean_rating - group_mean) %>%
+    ungroup() %>%
+    select(-mean_rating, -group_mean) %>%
+    spread_(key_col = by,
+            value_col = "mean_cent") %>%
+    data.frame()
+  
+  return(df_cent)
+}
+
 plot_U_fun <- function(svd,
                        age_group = c("adults", "children"),
                        transpose = c(FALSE, TRUE),
@@ -615,13 +646,8 @@ In this study, 431 US adults rated 21 characters (between-subjects) on 40 capaci
 
 ```{r, fig.width = 4, fig.asp = 0.67}
 d_ad %>%
-  gather(capacity, mean_rating, -character) %>%
-  # begin mean-centering by capacity
-  group_by(capacity) %>%
-  mutate(cap_mean = mean(mean_rating),
-         mean_cent = mean_rating - cap_mean) %>%
-  ungroup() %>%
-  # end mean-centering
+  mean_cent_fun(by = "capacity") %>%
+  gather(capacity, mean_cent, -character) %>%
   ggplot(aes(x = capacity, y = character, fill = mean_cent)) +
   geom_tile(color = "black") +
   scale_fill_gradient(low = "black", high = "white", limits = c(-3, 3),
@@ -633,21 +659,6 @@ d_ad %>%
        x = "Capacity",
        y = "Character",
        fill = "Mean rating")
-
-# check mean-centering: column means should be 0
-# d_ad %>%
-#   gather(capacity, mean_rating, -character) %>%
-#   # begin mean-centering by capacity
-#   group_by(capacity) %>%
-#   mutate(cap_mean = mean(mean_rating),
-#          mean_cent = mean_rating - cap_mean) %>%
-#   ungroup() %>% 
-#   distinct(character, capacity, mean_cent) %>% 
-#   spread(capacity, mean_cent) %>% 
-#   column_to_rownames("character") %>% 
-#   data.frame() %>% 
-#   colMeans() %>% 
-#   max()
 ```
 
 ### 7-9yo children
@@ -656,14 +667,9 @@ In this study, 123 7- to 9-year-old US children rated 9 characters (between-subj
 
 ```{r, fig.width = 4, fig.asp = 0.67}
 d_79 %>%
-  gather(capacity, mean_rating, -character) %>%
-  # begin mean-centering by capacity
-  group_by(capacity) %>%
-  mutate(cap_mean = mean(mean_rating),
-         mean_cent = mean_rating - cap_mean) %>%
-  ungroup() %>%
-  # end mean-centering
-  ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
+  mean_cent_fun(by = "capacity") %>%
+  gather(capacity, mean_cent, -character) %>%
+  ggplot(aes(x = capacity, y = character, fill = mean_cent)) +
   geom_tile(color = "black") +
   scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
                       guide = guide_colorbar(barheight = 15)) +
@@ -682,14 +688,9 @@ In this study, 124 4- to 6-year-old US children rated 9 characters (between-subj
 
 ```{r, fig.width = 4, fig.asp = 0.67}
 d_46 %>%
-  gather(capacity, mean_rating, -character) %>%
-  # begin mean-centering by capacity
-  group_by(capacity) %>%
-  mutate(cap_mean = mean(mean_rating),
-         mean_cent = mean_rating - cap_mean) %>%
-  ungroup() %>%
-  # end mean-centering
-  ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
+  mean_cent_fun(by = "capacity") %>%
+  gather(capacity, mean_cent, -character) %>%
+  ggplot(aes(x = capacity, y = character, fill = mean_cent)) +
   geom_tile(color = "black") +
   scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
                       guide = guide_colorbar(barheight = 15)) +
@@ -708,17 +709,8 @@ d_46 %>%
 ### Adults
 
 ```{r}
-svd3_ad <- svd(d_ad %>% 
-                 # begin mean-centering by capacity
-                 gather(capacity, mean_rating, -character) %>%
-                 group_by(capacity) %>%
-                 mutate(cap_mean = mean(mean_rating),
-                        mean_cent = mean_rating - cap_mean) %>%
-                 ungroup() %>%
-                 distinct(character, capacity, mean_cent) %>%
-                 spread(capacity, mean_cent) %>%
-                 data.frame() %>%
-                 # end mean-centering
+svd3_ad <- svd(d_ad %>%
+                 mean_cent_fun("capacity") %>%
                  column_to_rownames("character"),
                nrow(d_ad), nrow(d_ad))
 ```
@@ -757,16 +749,7 @@ plot_V_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
 
 ```{r}
 svd3_79 <- svd(d_79 %>%
-                 # begin mean-centering by capacity
-                 gather(capacity, mean_rating, -character) %>%
-                 group_by(capacity) %>%
-                 mutate(cap_mean = mean(mean_rating),
-                        mean_cent = mean_rating - cap_mean) %>%
-                 ungroup() %>%
-                 distinct(character, capacity, mean_cent) %>%
-                 spread(capacity, mean_cent) %>%
-                 data.frame() %>%
-                 # end mean-centering
+                 mean_cent_fun("capacity") %>%
                  column_to_rownames("character"),
                nrow(d_79), nrow(d_79))
 ```
@@ -805,16 +788,7 @@ plot_V_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
 
 ```{r}
 svd3_46 <- svd(d_46 %>%
-                 # begin mean-centering by capacity
-                 gather(capacity, mean_rating, -character) %>%
-                 group_by(capacity) %>%
-                 mutate(cap_mean = mean(mean_rating),
-                        mean_cent = mean_rating - cap_mean) %>%
-                 ungroup() %>%
-                 distinct(character, capacity, mean_cent) %>%
-                 spread(capacity, mean_cent) %>%
-                 data.frame() %>%
-                 # end mean-centering
+                 mean_cent_fun("capacity") %>%
                  column_to_rownames("character"),
                nrow(d_46), nrow(d_46))
 ```
@@ -862,12 +836,8 @@ In this study, 431 US adults rated 21 characters (between-subjects) on 40 capaci
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 d_ad %>%
-  gather(capacity, mean_rating, -character) %>%
-  # begin mean-centering by character
-  group_by(character) %>%
-  mutate(cap_mean = mean(mean_rating),
-         mean_cent = mean_rating - cap_mean) %>%
-  ungroup() %>%
+  mean_cent_fun("character") %>%
+  gather(character, mean_cent, -capacity) %>%
   # end mean-centering
   ggplot(aes(y = capacity, x = character, fill = mean_cent)) +
   geom_tile(color = "black") +
@@ -888,14 +858,9 @@ In this study, 123 7- to 9-year-old US children rated 9 characters (between-subj
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 d_79 %>%
-  gather(capacity, mean_rating, -character) %>%
-  # begin mean-centering by character
-  group_by(character) %>%
-  mutate(cap_mean = mean(mean_rating),
-         mean_cent = mean_rating - cap_mean) %>%
-  ungroup() %>%
-  # end mean-centering
-  ggplot(aes(y = capacity, x = character, fill = mean_rating)) +
+  mean_cent_fun("character") %>%
+  gather(character, mean_cent, -capacity) %>%
+  ggplot(aes(y = capacity, x = character, fill = mean_cent)) +
   geom_tile(color = "black") +
   scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
                       guide = guide_colorbar(barheight = 15)) +
@@ -913,15 +878,10 @@ d_79 %>%
 In this study, 124 4- to 6-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
 
 ```{r, fig.width = 3, fig.asp = 1.49}
-d_46 %>%
-  gather(capacity, mean_rating, -character) %>%
-  # begin mean-centering by character
-  group_by(character) %>%
-  mutate(cap_mean = mean(mean_rating),
-         mean_cent = mean_rating - cap_mean) %>%
-  ungroup() %>%
-  # end mean-centering
-  ggplot(aes(y = capacity, x = character, fill = mean_rating)) +
+d_79 %>%
+  mean_cent_fun("character") %>%
+  gather(character, mean_cent, -capacity) %>%
+  ggplot(aes(y = capacity, x = character, fill = mean_cent)) +
   geom_tile(color = "black") +
   scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
                       guide = guide_colorbar(barheight = 15)) +
@@ -941,64 +901,7 @@ d_46 %>%
 
 ```{r}
 svd4_ad <- svd(d_ad %>% 
-                 # begin mean-centering by character
-                 gather(capacity, mean_rating, -character) %>%
-                 group_by(character) %>%
-                 mutate(cap_mean = mean(mean_rating),
-                        mean_cent = mean_rating - cap_mean) %>%
-                 ungroup() %>%
-                 distinct(character, capacity, mean_cent) %>%
-                 spread(character, mean_cent) %>%
-                 data.frame() %>%
-                 # end mean-centering
-                 column_to_rownames("capacity"),
-               nrow(d_ad), nrow(d_ad))
-```
-
-```{r, fig.width = 3, fig.asp = 1.49}
-plot_reconstruct_fun(svd4_ad, transpose = TRUE, "adults") +
-  labs(title = "SVD: Adults (Approach #4)",
-       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
-       x = "", y = "")
-```
-
-```{r, fig.width = 3, fig.asp = 1.49}
-plot_U_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
-  labs(title = "SVD: Adults (Approach #4)",
-       subtitle = "U: Feature vectors (by mode)",
-       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
-       x = "", y = "")
-```
-
-```{r, fig.width = 3, fig.asp = 1}
-plot_S_fun(svd4_ad) +
-  labs(title = "SVD: Adults (Approach #4)",
-       subtitle = "S: Singular values (by mode)",
-       x = "", y = "")
-```
-
-```{r, fig.width = 3, fig.asp = 1}
-plot_V_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
-  labs(title = "SVD: Adults (Approach #4)",
-       subtitle = "V: Item vectors (by mode)",
-       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
-       x = "", y = "")
-```
-
-### Adults
-
-```{r}
-svd4_ad <- svd(d_ad %>% 
-                 # begin mean-centering by character
-                 gather(capacity, mean_rating, -character) %>%
-                 group_by(character) %>%
-                 mutate(cap_mean = mean(mean_rating),
-                        mean_cent = mean_rating - cap_mean) %>%
-                 ungroup() %>%
-                 distinct(character, capacity, mean_cent) %>%
-                 spread(character, mean_cent) %>%
-                 data.frame() %>%
-                 # end mean-centering
+                 mean_cent_fun("character") %>%
                  column_to_rownames("capacity"),
                nrow(d_ad), nrow(d_ad))
 ```
@@ -1037,16 +940,7 @@ plot_V_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
 
 ```{r}
 svd4_79 <- svd(d_79 %>% 
-                 # begin mean-centering by character
-                 gather(capacity, mean_rating, -character) %>%
-                 group_by(character) %>%
-                 mutate(cap_mean = mean(mean_rating),
-                        mean_cent = mean_rating - cap_mean) %>%
-                 ungroup() %>%
-                 distinct(character, capacity, mean_cent) %>%
-                 spread(character, mean_cent) %>%
-                 data.frame() %>%
-                 # end mean-centering
+                 mean_cent_fun("character") %>%
                  column_to_rownames("capacity"),
                nrow(d_79), nrow(d_79))
 ```
@@ -1086,16 +980,7 @@ plot_V_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
 
 ```{r}
 svd4_46 <- svd(d_46 %>% 
-                 # begin mean-centering by character
-                 gather(capacity, mean_rating, -character) %>%
-                 group_by(character) %>%
-                 mutate(cap_mean = mean(mean_rating),
-                        mean_cent = mean_rating - cap_mean) %>%
-                 ungroup() %>%
-                 distinct(character, capacity, mean_cent) %>%
-                 spread(character, mean_cent) %>%
-                 data.frame() %>%
-                 # end mean-centering
+                 mean_cent_fun("character") %>%
                  column_to_rownames("capacity"),
                nrow(d_46), nrow(d_46))
 ```
