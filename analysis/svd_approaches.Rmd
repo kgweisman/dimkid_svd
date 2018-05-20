@@ -607,8 +607,526 @@ plot_V_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
 
 In Approach #3 we mean-center by capacity, with characters as rows and capacities as columns.
 
+## Raw data matrix visualizations {.tabset}
+
+### Adults
+
+In this study, 431 US adults rated 21 characters (between-subjects) on 40 capacities (within-subjects). (See Weisman, Dweck, & Markman, 2017, _PNAS_, Study 4.)
+
+```{r, fig.width = 4, fig.asp = 0.67}
+d_ad %>%
+  gather(capacity, mean_rating, -character) %>%
+  # begin mean-centering by capacity
+  group_by(capacity) %>%
+  mutate(cap_mean = mean(mean_rating),
+         mean_cent = mean_rating - cap_mean) %>%
+  ungroup() %>%
+  # end mean-centering
+  ggplot(aes(x = capacity, y = character, fill = mean_cent)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(-3, 3),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: Adults",
+       subtitle = "21 characters, 40 capacities",
+       x = "Capacity",
+       y = "Character",
+       fill = "Mean rating")
+
+# check mean-centering: column means should be 0
+# d_ad %>%
+#   gather(capacity, mean_rating, -character) %>%
+#   # begin mean-centering by capacity
+#   group_by(capacity) %>%
+#   mutate(cap_mean = mean(mean_rating),
+#          mean_cent = mean_rating - cap_mean) %>%
+#   ungroup() %>% 
+#   distinct(character, capacity, mean_cent) %>% 
+#   spread(capacity, mean_cent) %>% 
+#   column_to_rownames("character") %>% 
+#   data.frame() %>% 
+#   colMeans() %>% 
+#   max()
+```
+
+### 7-9yo children
+
+In this study, 123 7- to 9-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
+
+```{r, fig.width = 4, fig.asp = 0.67}
+d_79 %>%
+  gather(capacity, mean_rating, -character) %>%
+  # begin mean-centering by capacity
+  group_by(capacity) %>%
+  mutate(cap_mean = mean(mean_rating),
+         mean_cent = mean_rating - cap_mean) %>%
+  ungroup() %>%
+  # end mean-centering
+  ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: 7- to 9-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       x = "Capacity",
+       y = "Character",
+       fill = "Mean rating")
+```
+
+### 4-6yo children
+
+In this study, 124 4- to 6-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
+
+```{r, fig.width = 4, fig.asp = 0.67}
+d_46 %>%
+  gather(capacity, mean_rating, -character) %>%
+  # begin mean-centering by capacity
+  group_by(capacity) %>%
+  mutate(cap_mean = mean(mean_rating),
+         mean_cent = mean_rating - cap_mean) %>%
+  ungroup() %>%
+  # end mean-centering
+  ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: 4- to 6-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       x = "Capacity",
+       y = "Character",
+       fill = "Mean rating")
+```
+
+
+## SVD {.tabset}
+
+### Adults
+
+```{r}
+svd3_ad <- svd(d_ad %>% 
+                 # begin mean-centering by capacity
+                 gather(capacity, mean_rating, -character) %>%
+                 group_by(capacity) %>%
+                 mutate(cap_mean = mean(mean_rating),
+                        mean_cent = mean_rating - cap_mean) %>%
+                 ungroup() %>%
+                 distinct(character, capacity, mean_cent) %>%
+                 spread(capacity, mean_cent) %>%
+                 data.frame() %>%
+                 # end mean-centering
+                 column_to_rownames("character"),
+               nrow(d_ad), nrow(d_ad))
+```
+
+```{r, fig.width = 4, fig.asp = 0.67}
+plot_reconstruct_fun(svd3_ad, transpose = FALSE, "adults") +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd3_ad) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_V_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+### Children, 7-9y
+
+```{r}
+svd3_79 <- svd(d_79 %>%
+                 # begin mean-centering by capacity
+                 gather(capacity, mean_rating, -character) %>%
+                 group_by(capacity) %>%
+                 mutate(cap_mean = mean(mean_rating),
+                        mean_cent = mean_rating - cap_mean) %>%
+                 ungroup() %>%
+                 distinct(character, capacity, mean_cent) %>%
+                 spread(capacity, mean_cent) %>%
+                 data.frame() %>%
+                 # end mean-centering
+                 column_to_rownames("character"),
+               nrow(d_79), nrow(d_79))
+```
+
+```{r, fig.width = 4, fig.asp = 0.67}
+plot_reconstruct_fun(svd3_79, transpose = FALSE, "children") +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd3_79) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_V_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+### Children, 4-6y
+
+```{r}
+svd3_46 <- svd(d_46 %>%
+                 # begin mean-centering by capacity
+                 gather(capacity, mean_rating, -character) %>%
+                 group_by(capacity) %>%
+                 mutate(cap_mean = mean(mean_rating),
+                        mean_cent = mean_rating - cap_mean) %>%
+                 ungroup() %>%
+                 distinct(character, capacity, mean_cent) %>%
+                 spread(capacity, mean_cent) %>%
+                 data.frame() %>%
+                 # end mean-centering
+                 column_to_rownames("character"),
+               nrow(d_46), nrow(d_46))
+```
+
+```{r, fig.width = 4, fig.asp = 0.67}
+plot_reconstruct_fun(svd3_46, transpose = FALSE, "children") +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd3_46, "children", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd3_46) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_V_fun(svd3_46, "children", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
 
 # Approach #4
 
 In Approach #4 we mean-center by character, with capacities as rows and characters as columns.
+
+## Raw data matrix visualizations {.tabset}
+
+### Adults
+
+In this study, 431 US adults rated 21 characters (between-subjects) on 40 capacities (within-subjects). (See Weisman, Dweck, & Markman, 2017, _PNAS_, Study 4.)
+
+```{r, fig.width = 3, fig.asp = 1.49}
+d_ad %>%
+  gather(capacity, mean_rating, -character) %>%
+  # begin mean-centering by character
+  group_by(character) %>%
+  mutate(cap_mean = mean(mean_rating),
+         mean_cent = mean_rating - cap_mean) %>%
+  ungroup() %>%
+  # end mean-centering
+  ggplot(aes(y = capacity, x = character, fill = mean_cent)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(-3, 3),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: Adults",
+       subtitle = "21 characters, 40 capacities",
+       y = "Capacity",
+       x = "Character",
+       fill = "Mean rating")
+```
+
+### 7-9yo children
+
+In this study, 123 7- to 9-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
+
+```{r, fig.width = 3, fig.asp = 1.49}
+d_79 %>%
+  gather(capacity, mean_rating, -character) %>%
+  # begin mean-centering by character
+  group_by(character) %>%
+  mutate(cap_mean = mean(mean_rating),
+         mean_cent = mean_rating - cap_mean) %>%
+  ungroup() %>%
+  # end mean-centering
+  ggplot(aes(y = capacity, x = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: 7- to 9-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       y = "Capacity",
+       x = "Character",
+       fill = "Mean rating")
+```
+
+### 4-6yo children
+
+In this study, 124 4- to 6-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
+
+```{r, fig.width = 3, fig.asp = 1.49}
+d_46 %>%
+  gather(capacity, mean_rating, -character) %>%
+  # begin mean-centering by character
+  group_by(character) %>%
+  mutate(cap_mean = mean(mean_rating),
+         mean_cent = mean_rating - cap_mean) %>%
+  ungroup() %>%
+  # end mean-centering
+  ggplot(aes(y = capacity, x = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: 4- to 6-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       y = "Capacity",
+       x = "Character",
+       fill = "Mean rating")
+```
+
+
+## SVD {.tabset}
+
+### Adults
+
+```{r}
+svd4_ad <- svd(d_ad %>% 
+                 # begin mean-centering by character
+                 gather(capacity, mean_rating, -character) %>%
+                 group_by(character) %>%
+                 mutate(cap_mean = mean(mean_rating),
+                        mean_cent = mean_rating - cap_mean) %>%
+                 ungroup() %>%
+                 distinct(character, capacity, mean_cent) %>%
+                 spread(character, mean_cent) %>%
+                 data.frame() %>%
+                 # end mean-centering
+                 column_to_rownames("capacity"),
+               nrow(d_ad), nrow(d_ad))
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_reconstruct_fun(svd4_ad, transpose = TRUE, "adults") +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_U_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd4_ad) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+### Adults
+
+```{r}
+svd4_ad <- svd(d_ad %>% 
+                 # begin mean-centering by character
+                 gather(capacity, mean_rating, -character) %>%
+                 group_by(character) %>%
+                 mutate(cap_mean = mean(mean_rating),
+                        mean_cent = mean_rating - cap_mean) %>%
+                 ungroup() %>%
+                 distinct(character, capacity, mean_cent) %>%
+                 spread(character, mean_cent) %>%
+                 data.frame() %>%
+                 # end mean-centering
+                 column_to_rownames("capacity"),
+               nrow(d_ad), nrow(d_ad))
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_reconstruct_fun(svd4_ad, transpose = TRUE, "adults") +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_U_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd4_ad) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+### Children, 7-9y
+
+```{r}
+svd4_79 <- svd(d_79 %>% 
+                 # begin mean-centering by character
+                 gather(capacity, mean_rating, -character) %>%
+                 group_by(character) %>%
+                 mutate(cap_mean = mean(mean_rating),
+                        mean_cent = mean_rating - cap_mean) %>%
+                 ungroup() %>%
+                 distinct(character, capacity, mean_cent) %>%
+                 spread(character, mean_cent) %>%
+                 data.frame() %>%
+                 # end mean-centering
+                 column_to_rownames("capacity"),
+               nrow(d_79), nrow(d_79))
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_reconstruct_fun(svd4_79, transpose = TRUE, "children") +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_U_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd4_79) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+
+### Children, 4-6y
+
+```{r}
+svd4_46 <- svd(d_46 %>% 
+                 # begin mean-centering by character
+                 gather(capacity, mean_rating, -character) %>%
+                 group_by(character) %>%
+                 mutate(cap_mean = mean(mean_rating),
+                        mean_cent = mean_rating - cap_mean) %>%
+                 ungroup() %>%
+                 distinct(character, capacity, mean_cent) %>%
+                 spread(character, mean_cent) %>%
+                 data.frame() %>%
+                 # end mean-centering
+                 column_to_rownames("capacity"),
+               nrow(d_46), nrow(d_46))
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_reconstruct_fun(svd4_46, transpose = TRUE, "children") +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_U_fun(svd4_46, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd4_46) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd4_46, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
 
