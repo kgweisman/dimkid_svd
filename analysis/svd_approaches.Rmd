@@ -68,10 +68,16 @@ character_names_ch <- levels(d_79$character)
 ```{r functions, include = F}
 plot_U_fun <- function(svd,
                        age_group = c("adults", "children"),
-                       multiply = c(TRUE, FALSE)){
-  
-  if(age_group == "adults"){character_names <- character_names_ad}
-  if(age_group == "children"){character_names <- character_names_ch}
+                       transpose = c(FALSE, TRUE),
+                       multiply = c(FALSE, TRUE)){
+
+  if(transpose == FALSE) {
+    if(age_group == "adults"){y_names <- character_names_ad}
+    if(age_group == "children"){y_names <- character_names_ch}
+  } else if(transpose == TRUE) {
+    if(age_group == "adults"){y_names <- capacity_names_ad}
+    if(age_group == "children"){y_names <- capacity_names_ch}
+  }  
   
   S <- svd$d
 
@@ -79,7 +85,7 @@ plot_U_fun <- function(svd,
     data.frame() %>%
     rownames_to_column("property") %>%
     mutate(property = as.numeric(property),
-           property = factor(property, labels = character_names)) %>%
+           property = factor(property, labels = y_names)) %>%
     gather(mode, value, -property) %>%
     mutate(mode = as.numeric(as.character(gsub("X", "", mode))),
            mode = ifelse(mode < 10, paste0("mode_0", as.character(mode)), 
@@ -105,7 +111,7 @@ plot_U_fun <- function(svd,
 
 plot_S_fun <- function(svd){
   
-  S <- diag(x = svd$d, nrow = nrow(svd$u), ncol = ncol(svd$u)) %>%
+  S <- diag(x = svd$d, nrow = length(svd$d), ncol = length(svd$d)) %>%
     data.frame() %>%
     rownames_to_column("modeA") %>%
     gather(modeB, value, -modeA) %>%
@@ -132,10 +138,16 @@ plot_S_fun <- function(svd){
 
 plot_V_fun <- function(svd,
                        age_group = c("adults", "children"),
-                       multiply = c(TRUE, FALSE)){
-  
-  if(age_group == "adults"){capacity_names <- capacity_names_ad}
-  if(age_group == "children"){capacity_names <- capacity_names_ch}
+                       transpose = c(FALSE, TRUE),
+                       multiply = c(FALSE, TRUE)){
+
+  if(transpose == FALSE) {
+    if(age_group == "adults"){y_names <- capacity_names_ad}
+    if(age_group == "children"){y_names <- capacity_names_ch}
+  } else if(transpose == TRUE) {
+    if(age_group == "adults"){y_names <- character_names_ad}
+    if(age_group == "children"){y_names <- character_names_ch}
+  }
   
   S <- svd$d
 
@@ -143,7 +155,7 @@ plot_V_fun <- function(svd,
     data.frame() %>%
     rownames_to_column("item") %>%
     mutate(item = as.numeric(item),
-           item = factor(item, labels = capacity_names)) %>%
+           item = factor(item, labels = y_names)) %>%
     gather(mode, value, -item) %>%
     mutate(mode = as.numeric(as.character(gsub("X", "", mode))),
            mode = ifelse(mode < 10, paste0("mode_0", as.character(mode)), 
@@ -167,16 +179,28 @@ plot_V_fun <- function(svd,
   return(plot)
 }
 
-plot_reconstruct_fun <- function(svd, age_group = c("adults", "children")){
-  
-  if(age_group == "adults"){
-    character_names <- character_names_ad
-    capacity_names <- capacity_names_ad
-  }
-  
-  if(age_group == "children"){
-    character_names <- character_names_ch
-    capacity_names <- capacity_names_ch
+plot_reconstruct_fun <- function(svd, 
+                       age_group = c("adults", "children"),
+                       transpose = c(FALSE, TRUE)){
+
+  if(transpose == FALSE) {
+    if(age_group == "adults"){
+      x_names <- capacity_names_ad
+      y_names <- character_names_ad
+    }
+    if(age_group == "children"){
+      x_names <- capacity_names_ch
+      y_names <- character_names_ch
+    }
+  } else if(transpose == TRUE) {
+    if(age_group == "adults"){
+      x_names <- character_names_ad
+      y_names <- capacity_names_ad
+    }
+    if(age_group == "children"){
+      x_names <- character_names_ch
+      y_names <- capacity_names_ch
+    }
   }
   
   # calculate outer products, multiply by singular value
@@ -190,11 +214,11 @@ plot_reconstruct_fun <- function(svd, age_group = c("adults", "children")){
     data.frame() %>%
     rownames_to_column("character") %>%
     mutate(character = factor(as.numeric(character), 
-                              labels = character_names)) %>%
+                              labels = y_names)) %>%
     gather(capacity, value, -character) %>%
     mutate(capacity = gsub("X", "", capacity),
            capacity = factor(as.numeric(capacity),
-                             labels = capacity_names))
+                             labels = x_names))
   
   
   plot <- ggplot(OP_sum, aes(x = capacity, y = character, fill = value)) +
@@ -217,13 +241,17 @@ In this document, I explore 4 approaches to SVD with Dimkid data:
 3. Mean-centering by capacity, characters as rows and capacities as columns (the classic approach)
 4. Mean-centering by character, capacities as rows and characters as columns
 
-# Raw data matrix visualizations {.tabset}
+# Approach #1
 
-## Adults
+In Approach #1 we proceed without mean-centering, with characters as rows and capacities as columns.
+
+## Raw data matrix visualizations {.tabset}
+
+### Adults
 
 In this study, 431 US adults rated 21 characters (between-subjects) on 40 capacities (within-subjects). (See Weisman, Dweck, & Markman, 2017, _PNAS_, Study 4.)
 
-```{r raw adults, fig.width = 4, fig.asp = 0.67}
+```{r, fig.width = 4, fig.asp = 0.67}
 d_ad %>%
   gather(capacity, mean_rating, -character) %>%
   ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
@@ -239,11 +267,11 @@ d_ad %>%
        fill = "Mean rating")
 ```
 
-## 7-9yo children
+### 7-9yo children
 
 In this study, 123 7- to 9-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
 
-```{r raw 7-9yo, fig.width = 4, fig.asp = 0.67}
+```{r, fig.width = 4, fig.asp = 0.67}
 d_79 %>%
   gather(capacity, mean_rating, -character) %>%
   ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
@@ -259,11 +287,11 @@ d_79 %>%
        fill = "Mean rating")
 ```
 
-## 4-6yo children
+### 4-6yo children
 
 In this study, 124 4- to 6-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
 
-```{r raw 4-6yo, fig.width = 4, fig.asp = 0.67}
+```{r, fig.width = 4, fig.asp = 0.67}
 d_46 %>%
   gather(capacity, mean_rating, -character) %>%
   ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
@@ -280,11 +308,9 @@ d_46 %>%
 ```
 
 
-# Approach #1 {.tabset}
+## SVD {.tabset}
 
-In Approach #1 we proceed without mean-centering, with characters as rows and capacities as columns.
-
-## Adults
+### Adults
 
 ```{r}
 svd1_ad <- svd(d_ad %>% column_to_rownames("character"), 
@@ -292,14 +318,14 @@ svd1_ad <- svd(d_ad %>% column_to_rownames("character"),
 ```
 
 ```{r, fig.width = 4, fig.asp = 0.67}
-plot_reconstruct_fun(svd1_ad, "adults") +
+plot_reconstruct_fun(svd1_ad, transpose = FALSE, "adults") +
   labs(title = "SVD: Adults (Approach #1)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
 
 ```{r, fig.width = 3, fig.asp = 1}
-plot_U_fun(svd1_ad, "adults", multiply = FALSE) +
+plot_U_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
   labs(title = "SVD: Adults (Approach #1)",
        subtitle = "U: Feature vectors (by mode)",
        # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
@@ -314,15 +340,14 @@ plot_S_fun(svd1_ad) +
 ```
 
 ```{r, fig.width = 3, fig.asp = 1.49}
-plot_V_fun(svd1_ad, "adults", multiply = FALSE) +
+plot_V_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
   labs(title = "SVD: Adults (Approach #1)",
        subtitle = "V: Item vectors (by mode)",
        # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
        x = "", y = "")
 ```
 
-
-## 7-9yo children 
+### Children, 7-9y
 
 ```{r}
 svd1_79 <- svd(d_79 %>% column_to_rownames("character"), 
@@ -330,14 +355,14 @@ svd1_79 <- svd(d_79 %>% column_to_rownames("character"),
 ```
 
 ```{r, fig.width = 4, fig.asp = 0.67}
-plot_reconstruct_fun(svd1_79, "children") +
+plot_reconstruct_fun(svd1_79, transpose = FALSE, "children") +
   labs(title = "SVD: Children, 7-9y (Approach #1)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
 
 ```{r, fig.width = 3, fig.asp = 1}
-plot_U_fun(svd1_79, "children", multiply = FALSE) +
+plot_U_fun(svd1_79, "children", transpose = FALSE, multiply = FALSE) +
   labs(title = "SVD: Children, 7-9y (Approach #1)",
        subtitle = "U: Feature vectors (by mode)",
        # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
@@ -352,19 +377,14 @@ plot_S_fun(svd1_79) +
 ```
 
 ```{r, fig.width = 3, fig.asp = 1.49}
-plot_V_fun(svd1_79, "children", multiply = FALSE) +
+plot_V_fun(svd1_79, "children", transpose = FALSE, multiply = FALSE) +
   labs(title = "SVD: Children, 7-9y (Approach #1)",
        subtitle = "V: Item vectors (by mode)",
        # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
        x = "", y = "")
 ```
 
-__Questions for Jay__:
-
-- Some but not all of the modes are reversed, relative to Jay's results from 2018-05-14 (modes #1, 3, 4, 7, and 9). Is this ok?
-
-
-## 4-6yo children 
+### Children, 4-6y
 
 ```{r}
 svd1_46 <- svd(d_46 %>% column_to_rownames("character"), 
@@ -372,14 +392,14 @@ svd1_46 <- svd(d_46 %>% column_to_rownames("character"),
 ```
 
 ```{r, fig.width = 4, fig.asp = 0.67}
-plot_reconstruct_fun(svd1_46, "children") +
+plot_reconstruct_fun(svd1_46, transpose = FALSE, "children") +
   labs(title = "SVD: Children, 4-6y (Approach #1)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
 
 ```{r, fig.width = 3, fig.asp = 1}
-plot_U_fun(svd1_46, "children", multiply = FALSE) +
+plot_U_fun(svd1_46, "children", transpose = FALSE, multiply = FALSE) +
   labs(title = "SVD: Children, 4-6y (Approach #1)",
        subtitle = "U: Feature vectors (by mode)",
        # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
@@ -394,7 +414,7 @@ plot_S_fun(svd1_46) +
 ```
 
 ```{r, fig.width = 3, fig.asp = 1.49}
-plot_V_fun(svd1_46, "children", multiply = FALSE) +
+plot_V_fun(svd1_46, "children", transpose = FALSE, multiply = FALSE) +
   labs(title = "SVD: Children, 4-6y (Approach #1)",
        subtitle = "V: Item vectors (by mode)",
        # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
@@ -405,6 +425,182 @@ plot_V_fun(svd1_46, "children", multiply = FALSE) +
 # Approach #2
 
 In Approach #2 we proceed without mean-centering, with capacities as rows and characters as columns.
+
+## Raw data matrix visualizations {.tabset}
+
+### Adults
+
+In this study, 431 US adults rated 21 characters (between-subjects) on 40 capacities (within-subjects). (See Weisman, Dweck, & Markman, 2017, _PNAS_, Study 4.)
+
+```{r, fig.width = 3, fig.asp = 1.79}
+d_ad %>%
+  gather(capacity, mean_rating, -character) %>%
+  ggplot(aes(y = capacity, x = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(-3, 3),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: Adults",
+       subtitle = "21 characters, 40 capacities",
+       y = "Capacity",
+       x = "Character",
+       fill = "Mean rating")
+```
+
+### 7-9yo children
+
+In this study, 123 7- to 9-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
+
+```{r, fig.width = 3, fig.asp = 1.49}
+d_79 %>%
+  gather(capacity, mean_rating, -character) %>%
+  ggplot(aes(y = capacity, x = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: 7- to 9-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       y = "Capacity",
+       x = "Character",
+       fill = "Mean rating")
+```
+
+### 4-6yo children
+
+In this study, 124 4- to 6-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
+
+```{r, fig.width = 3, fig.asp = 1.49}
+d_46 %>%
+  gather(capacity, mean_rating, -character) %>%
+  ggplot(aes(y = capacity, x = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(title = "Raw data: 4- to 6-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       y = "Capacity",
+       x = "Character",
+       fill = "Mean rating")
+```
+
+
+## SVD {.tabset}
+
+### Adults
+
+```{r}
+svd2_ad <- svd(d_ad %>% column_to_rownames("character") %>% t(), 
+               nrow(d_ad), nrow(d_ad))
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_reconstruct_fun(svd2_ad, "adults", TRUE) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_U_fun(svd2_ad, "adults", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd2_ad) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd2_ad, "adults", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+### Children, 7-9y
+
+```{r}
+svd2_79 <- svd(d_79 %>% column_to_rownames("character") %>% t(), 
+               nrow(d_79), nrow(d_79))
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_reconstruct_fun(svd2_79, "children", TRUE) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_U_fun(svd2_79, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd2_79) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd2_79, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+### Children, 4-6y
+
+```{r}
+svd2_46 <- svd(d_46 %>% column_to_rownames("character") %>% t(), 
+               nrow(d_46), nrow(d_46))
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_reconstruct_fun(svd2_46, "children", TRUE) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_U_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd2_46) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
 
 
 # Approach #3
