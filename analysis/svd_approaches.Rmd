@@ -105,7 +105,7 @@ mean_cent_fun <- function(df,
   return(df_cent)
 }
 
-plot_U_fun <- function(svd,
+U_fun <- function(svd,
                        age_group = c("adults", "children"),
                        transpose = c(FALSE, TRUE),
                        multiply = c(FALSE, TRUE)){
@@ -135,9 +135,21 @@ plot_U_fun <- function(svd,
         mutate(S = factor(mode, labels = S),
                S = as.numeric(as.character(S)),
                value = value * S)
-  }
+      df_final <- UxS
+  } else {df_final <- U}
   
-  plot <- ggplot(U, aes(x = mode, y = property, fill = value)) +
+  return(df_final)
+
+}
+
+plot_U_fun <- function(svd,
+                       age_group = c("adults", "children"),
+                       transpose = c(FALSE, TRUE),
+                       multiply = c(FALSE, TRUE)){
+
+  df_final <- U_fun(svd, age_group, transpose, multiply)
+  
+  plot <- ggplot(df_final, aes(x = mode, y = property, fill = value)) +
     geom_tile(color = "black") +
     # geom_text(aes(label = format(round(value, 2), nsmall = 2)), size = 3) +
     scale_fill_distiller(palette = "RdBu", direction = -1,
@@ -175,7 +187,7 @@ plot_S_fun <- function(svd){
   return(plot)
 }
 
-plot_V_fun <- function(svd,
+V_fun <- function(svd,
                        age_group = c("adults", "children"),
                        transpose = c(FALSE, TRUE),
                        multiply = c(FALSE, TRUE)){
@@ -205,9 +217,20 @@ plot_V_fun <- function(svd,
         mutate(S = factor(mode, labels = S),
                S = as.numeric(as.character(S)),
                value = value * S)
-  }
+      df_final <- VxS
+  } else {df_final <- V}
   
-  plot <- ggplot(V, aes(x = mode, y = item, fill = value)) +
+  return(df_final)
+}
+
+plot_V_fun <- function(svd,
+                       age_group = c("adults", "children"),
+                       transpose = c(FALSE, TRUE),
+                       multiply = c(FALSE, TRUE)){
+
+  df_final <- V_fun(svd, age_group, transpose, multiply)
+  
+  plot <- ggplot(df_final, aes(x = mode, y = item, fill = value)) +
     geom_tile(color = "black") +
     # geom_text(aes(label = format(round(value, 2), nsmall = 2)), size = 3) +
     scale_fill_distiller(palette = "RdBu", direction = -1,
@@ -218,9 +241,9 @@ plot_V_fun <- function(svd,
   return(plot)
 }
 
-plot_reconstruct_fun <- function(svd, 
-                       age_group = c("adults", "children"),
-                       transpose = c(FALSE, TRUE)){
+reconstruct_fun <- function(svd,
+                            age_group = c("adults", "children"),
+                            transpose = c(FALSE, TRUE)){
 
   if(age_group == "adults"){
       capacity_names <- capacity_names_ad
@@ -255,6 +278,15 @@ plot_reconstruct_fun <- function(svd,
     gather(x, value, -y) %>%
     mutate(x = gsub("X", "", x),
            x = factor(as.numeric(x), labels = x_names))
+  
+  return(OP_sum)
+}
+
+plot_reconstruct_fun <- function(svd, 
+                       age_group = c("adults", "children"),
+                       transpose = c(FALSE, TRUE)){
+
+  OP_sum <- reconstruct_fun(svd, age_group, transpose)
 
   plot <- ggplot(OP_sum, aes(x = x, y = y, fill = value)) +
     geom_tile(color = "black") +
@@ -380,6 +412,10 @@ plot_V_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
        subtitle = "V: Item vectors (by mode)",
        # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
        x = "", y = "")
+```
+
+```{r}
+
 ```
 
 ### Children, 7-9y
