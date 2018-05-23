@@ -160,6 +160,59 @@ plot_U_fun <- function(svd,
   return(plot)
 }
 
+plot_U_fun_prop <- function(svd, 
+                            age_group = c("adults", "children"),
+                            transpose = FALSE,
+                            multiply = FALSE,
+                            efa_colors = FALSE,
+                            modes = c("mode_01", "mode_02")){
+  
+  df_plot <- U_fun(svd, age_group, transpose, multiply) %>%
+    filter(mode %in% modes)
+  
+  if(multiply == TRUE){
+    df_plot <- df_plot %>% select(-S)
+  }
+  
+  if(efa_colors == TRUE){
+    if(age_group == "adults"){colors <- efa_colors_ad}
+    if(age_group == "children"){colors <- efa_colors_79}
+    df_plot <- df_plot %>%
+      full_join(colors %>% 
+                  distinct(capacity, factor) %>% 
+                  rename(property = capacity)) %>%
+      mutate(factor = factor(factor))
+  } else {
+    df_plot <- df_plot %>%
+      mutate(factor = "none",
+             factor = factor(factor))
+  }
+
+  plot <- df_plot %>%
+    spread(mode, value) %>%
+    ggplot(aes(x = .[3], y = .[4], label = property, color = factor)) +
+    geom_point() +
+    ggrepel::geom_text_repel(size = 3) +
+    scale_x_continuous(breaks = seq(-100, 100, .1)) +
+    scale_y_continuous(breaks = seq(-100, 100, .1)) +
+    theme_minimal()
+  
+  if(efa_colors == TRUE){
+    if(age_group == "adults"){
+      plot <- plot + 
+        scale_color_brewer(palette = "Set1")
+    } else {
+      plot <- plot + 
+        scale_color_manual(values = c("#377eb8", "#4daf4a", "#e41a1c"))
+    }
+  } else {
+    plot <- plot + scale_color_manual(values = "black")
+  }
+  
+  return(plot)
+  
+}
+
 plot_S_fun <- function(svd){
   
   S <- diag(x = svd$d, nrow = length(svd$d), ncol = length(svd$d)) %>%
@@ -241,6 +294,59 @@ plot_V_fun <- function(svd,
   return(plot)
 }
 
+plot_V_fun_item <- function(svd, 
+                            age_group = c("adults", "children"),
+                            transpose = FALSE,
+                            multiply = FALSE,
+                            efa_colors = FALSE,
+                            modes = c("mode_01", "mode_02")){
+  
+  df_plot <- V_fun(svd, age_group, transpose, multiply) %>%
+    filter(mode %in% modes)
+  
+  if(multiply == TRUE){
+    df_plot <- df_plot %>% select(-S)
+  }
+  
+  if(efa_colors == TRUE){
+    if(age_group == "adults"){colors <- efa_colors_ad}
+    if(age_group == "children"){colors <- efa_colors_79}
+    df_plot <- df_plot %>%
+      full_join(colors %>% 
+                  distinct(capacity, factor) %>% 
+                  rename(item = capacity)) %>%
+      mutate(factor = factor(factor))
+  } else {
+    df_plot <- df_plot %>%
+      mutate(factor = "none",
+             factor = factor(factor))
+  }
+
+  plot <- df_plot %>%
+    spread(mode, value) %>%
+    ggplot(aes(x = .[3], y = .[4], label = item, color = factor)) +
+    geom_point() +
+    ggrepel::geom_text_repel(size = 3) +
+    scale_x_continuous(breaks = seq(-100, 100, .1)) +
+    scale_y_continuous(breaks = seq(-100, 100, .1)) +
+    theme_minimal()
+
+  if(efa_colors == TRUE){
+    if(age_group == "adults"){
+      plot <- plot + 
+        scale_color_brewer(palette = "Set1")
+    } else {
+      plot <- plot + 
+        scale_color_manual(values = c("#377eb8", "#4daf4a", "#e41a1c"))
+    }
+  } else {
+    plot <- plot + scale_color_manual(values = "black")
+  }
+  
+  return(plot)
+  
+}
+
 reconstruct_fun <- function(svd,
                             age_group = c("adults", "children"),
                             transpose = c(FALSE, TRUE)){
@@ -307,6 +413,106 @@ In this document, I explore 4 approaches to SVD with Dimkid data:
 2. No mean-centering, capacities as rows and characters as columns
 3. Mean-centering by capacity, characters as rows and capacities as columns (the classic approach)
 4. Mean-centering by character, capacities as rows and characters as columns
+
+
+# Factor analysis {.tabset}
+
+```{r, fig.width = 3, fig.asp = 1.49, include = F}
+efa_loadings_ad <- fa(d_ad %>% column_to_rownames("character"),
+                     nfactors = 3, rotate = "varimax")$loadings[] %>%
+  fa.sort() %>%
+  data.frame() %>%
+  rownames_to_column("capacity") %>%
+  rownames_to_column("order") %>%
+  mutate(order = as.numeric(order)) %>%
+  gather(factor, loading, -c(capacity, order))
+
+efa_colors_ad <- efa_loadings_ad %>%
+  group_by(capacity) %>%
+  top_n(1, abs(loading))
+
+ggplot(efa_loadings_ad,
+       aes(x = factor, y = reorder(capacity, desc(order)),
+           fill = loading, label = format(round(loading, 2), digits = 2))) +
+  geom_tile(color = "black") +
+  geom_text(size = 3) +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = 20.5, ymax = 40.5, 
+           alpha = 0, color = "black") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = 9.5, ymax = 20.5, 
+           alpha = 0, color = "black") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = 0.5, ymax = 9.5, 
+           alpha = 0, color = "black") +
+  scale_fill_distiller(palette = "RdYlBu", limits = c(-1, 1),
+                       guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  labs(title = "EFA: Adults",
+       x = "Factor", y = "Capacity", fill = "Loading")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49, include = F}
+efa_loadings_79 <- fa(d_79 %>% column_to_rownames("character"),
+                     nfactors = 3, rotate = "varimax")$loadings[] %>%
+  fa.sort() %>%
+  data.frame() %>%
+  rownames_to_column("capacity") %>%
+  rownames_to_column("order") %>%
+  mutate(order = as.numeric(order)) %>%
+  gather(factor, loading, -c(capacity, order))
+
+efa_colors_79 <- efa_loadings_79 %>%
+  group_by(capacity) %>%
+  top_n(1, abs(loading))
+
+ggplot(efa_loadings_79,
+       aes(x = factor, y = reorder(capacity, desc(order)),
+           fill = loading, label = format(round(loading, 2), digits = 2))) +
+  geom_tile(color = "black") +
+  geom_text(size = 3) +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = 14.5, ymax = 20.5, 
+           alpha = 0, color = "black") +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = 6.5, ymax = 14.5, 
+           alpha = 0, color = "black") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = 0.5, ymax = 6.5, 
+           alpha = 0, color = "black") +
+  scale_fill_distiller(palette = "RdYlBu", limits = c(-1, 1),
+                       guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  labs(title = "EFA: Children, 7-9y",
+       x = "Factor", y = "Capacity", fill = "Loading")
+```
+
+```{r, fig.width = 3, fig.asp = 1.49, include = F}
+efa_loadings_46 <- fa(d_46 %>% column_to_rownames("character"),
+                     nfactors = 3, rotate = "varimax")$loadings[] %>%
+  fa.sort() %>%
+  data.frame() %>%
+  rownames_to_column("capacity") %>%
+  rownames_to_column("order") %>%
+  mutate(order = as.numeric(order)) %>%
+  gather(factor, loading, -c(capacity, order))
+
+efa_colors_46 <- efa_loadings_46 %>%
+  group_by(capacity) %>%
+  top_n(1, abs(loading))
+
+ggplot(efa_loadings_46,
+       aes(x = factor, y = reorder(capacity, desc(order)),
+           fill = loading, label = format(round(loading, 2), digits = 2))) +
+  geom_tile(color = "black") +
+  geom_text(size = 3) +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = 8.5, ymax = 20.5, 
+           alpha = 0, color = "black") +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = 3.5, ymax = 8.5, 
+           alpha = 0, color = "black") +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = 0.5, ymax = 3.5, 
+           alpha = 0, color = "black") +
+  scale_fill_distiller(palette = "RdYlBu", limits = c(-1, 1),
+                       guide = guide_colorbar(barheight = 15)) +
+  theme_minimal() +
+  labs(title = "EFA: Children, 4-6y",
+       x = "Factor", y = "Capacity", fill = "Loading")
+```
+
 
 # Approach #1
 
@@ -414,42 +620,46 @@ plot_V_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd1_ad, "adults", FALSE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .1)) +
-  scale_y_continuous(breaks = seq(-100, 100, .1)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd1_ad, "adults", efa_colors = TRUE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #1)",
-       subtitle = "U: Characaters in first two modes",
-       # subtitle = "U X S: Characaters in first two modes",
+       subtitle = "V: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd1_ad, "adults", efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #1)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd1_ad, "adults", efa_colors = TRUE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #1)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd1_ad, "adults", FALSE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .05)) +
-  scale_y_continuous(breaks = seq(-100, 100, .05)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd1_ad, "adults",  
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #1)",
-       subtitle = "V: Capacities in first two modes",
-       # subtitle = "V X S: Capacities in first two modes",
+       subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd1_ad, "adults",
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #1)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd1_ad, "adults", 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #1)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -490,42 +700,46 @@ plot_V_fun(svd1_79, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd1_79, "children", FALSE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .1)) +
-  scale_y_continuous(breaks = seq(-100, 100, .1)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd1_79, "children", efa_colors = TRUE,
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #1)",
-       subtitle = "U: Characaters in first two modes",
-       # subtitle = "U X S: Characaters in first two modes",
+       subtitle = "V: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd1_79, "children", efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #1)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd1_79, "children", efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #1)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd1_79, "children", FALSE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .1)) +
-  scale_y_continuous(breaks = seq(-100, 100, .1)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd1_79, "children", 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #1)",
-       subtitle = "V: Capacities in first two modes",
-       # subtitle = "V X S: Capacities in first two modes",
+       subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd1_79, "children",
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #1)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd1_79, "children", 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #1)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -566,42 +780,46 @@ plot_V_fun(svd1_46, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd1_46, "children", FALSE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .1)) +
-  scale_y_continuous(breaks = seq(-100, 100, .1)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd1_46, "children", efa_colors = TRUE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #1)",
-       subtitle = "U: Characaters in first two modes",
-       # subtitle = "U X S: Characaters in first two modes",
+       subtitle = "V: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd1_46, "children", efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #1)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd1_46, "children", efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #1)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd1_46, "children", FALSE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .1)) +
-  scale_y_continuous(breaks = seq(-100, 100, .1)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd1_46, "children", 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #1)",
-       subtitle = "V: Capacities in first two modes",
-       # subtitle = "V X S: Capacities in first two modes",
+       subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd1_46, "children", 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #1)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd1_46, "children",  
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #1)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -711,40 +929,46 @@ plot_V_fun(svd2_ad, "adults", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd2_ad, "adults", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, 3)) +
-  scale_y_continuous(breaks = seq(-100, 100, 3)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd2_ad, "adults", transpose = TRUE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #2)",
-       subtitle = "U X S: Capacities in first two modes",
+       subtitle = "V: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd2_ad, "adults", transpose = TRUE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "V: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd2_ad, "adults", transpose = TRUE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "V: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd2_ad, "adults", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, 3)) +
-  scale_y_continuous(breaks = seq(-100, 100, 3)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd2_ad, "adults", transpose = TRUE, efa_colors = TRUE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #2)",
-       subtitle = "V X S: Characters in first two modes",
+       subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd2_ad, "adults", transpose = TRUE, efa_colors = TRUE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "U: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd2_ad, "adults", transpose = TRUE, efa_colors = TRUE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #2)",
+       subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -785,40 +1009,46 @@ plot_V_fun(svd2_79, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd2_79, "children", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .5)) +
-  scale_y_continuous(breaks = seq(-100, 100, .5)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd2_79, "children", transpose = TRUE,
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #2)",
-       subtitle = "U X S: Capacities in first two modes",
+       subtitle = "V: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd2_79, "children", transpose = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "V: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd2_79, "children", transpose = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "V: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd2_79, "children", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .5)) +
-  scale_y_continuous(breaks = seq(-100, 100, .5)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd2_79, "children", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #2)",
-       subtitle = "V X S: Characters in first two modes",
+       subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd2_79, "children", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "U: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd2_79, "children", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #2)",
+       subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -859,40 +1089,46 @@ plot_V_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd2_46, "children", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd2_46, "children", transpose = TRUE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #2)",
-       subtitle = "U X S: Capacities in first two modes",
+       subtitle = "V: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd2_46, "children", transpose = TRUE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "V: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd2_46, "children", transpose = TRUE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "V: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd2_46, "children", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd2_46, "children", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #2)",
-       subtitle = "V X S: Characters in first two modes",
+       subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd2_46, "children", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "U: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd2_46, "children", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #2)",
+       subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -1007,40 +1243,46 @@ plot_V_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd3_ad, "adults", FALSE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, 3)) +
-  scale_y_continuous(breaks = seq(-100, 100, 3)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd3_ad, "adults", FALSE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #3)",
-       subtitle = "U X S: Characaters in first two modes",
+       subtitle = "V: Capacities in Modes 1 & 2", 
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd3_ad, "adults", FALSE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd3_ad, "adults", FALSE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd3_ad, "adults", FALSE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, 3)) +
-  scale_y_continuous(breaks = seq(-100, 100, 3)) +
-  theme_minimal() +
-  # coord_equal() +
-  labs(title = "SVD: Adults (Approach #2)",
-       subtitle = "V X S: Capacities in first two modes",
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd3_ad, "adults", FALSE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd3_ad, "adults", FALSE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd3_ad, "adults", FALSE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #3)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -1083,40 +1325,46 @@ plot_V_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd3_79, "children", FALSE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd3_79, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
-       subtitle = "U X S: Characaters in first two modes",
+       subtitle = "V: Capacities in Modes 1 & 2", 
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd3_79, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd3_79, "children", FALSE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd3_79, "children", FALSE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
-  labs(title = "SVD: Children, 7-9y (Approach #2)",
-       subtitle = "V X S: Capacities in first two modes",
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd3_79, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd3_79, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd3_79, "children", FALSE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #3)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -1159,40 +1407,46 @@ plot_V_fun(svd3_46, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd3_46, "children", FALSE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd3_46, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
-       subtitle = "U X S: Characaters in first two modes",
+       subtitle = "V: Capacities in Modes 1 & 2", 
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd3_46, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd3_46, "children", FALSE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd3_46, "children", FALSE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
-  labs(title = "SVD: Children, 4-6y (Approach #2)",
-       subtitle = "V X S: Capacities in first two modes",
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd3_46, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd3_46, "children", FALSE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd3_46, "children", FALSE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #3)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -1310,40 +1564,46 @@ plot_V_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd4_ad, "adults", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, 3)) +
-  scale_y_continuous(breaks = seq(-100, 100, 3)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd4_ad, "adults", TRUE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #4)",
-       subtitle = "U X S: Capacities in first two modes",
+       subtitle = "V: Characters in Modes 1 & 2", 
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd4_ad, "adults", TRUE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "V: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd4_ad, "adults", TRUE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "V: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd4_ad, "adults", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, 3)) +
-  scale_y_continuous(breaks = seq(-100, 100, 3)) +
-  theme_minimal() +
-  # coord_equal() +
-  labs(title = "SVD: Adults (Approach #2)",
-       subtitle = "V X S: Characters in first two modes",
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd4_ad, "adults", TRUE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd4_ad, "adults", TRUE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "U: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd4_ad, "adults", TRUE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Adults (Approach #4)",
+       subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -1386,40 +1646,46 @@ plot_V_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd4_79, "children", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .5)) +
-  scale_y_continuous(breaks = seq(-100, 100, .5)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd4_79, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
-       subtitle = "U X S: Capacities in first two modes",
+       subtitle = "V: Characters in Modes 1 & 2", 
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd4_79, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "V: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd4_79, "children", TRUE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "V: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd4_79, "children", TRUE, TRUE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .5)) +
-  scale_y_continuous(breaks = seq(-100, 100, .5)) +
-  theme_minimal() +
-  # coord_equal() +
-  labs(title = "SVD: Children, 7-9y (Approach #2)",
-       subtitle = "V X S: Characters in first two modes",
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd4_79, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd4_79, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "U: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd4_79, "children", TRUE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 7-9y (Approach #4)",
+       subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
@@ -1462,42 +1728,46 @@ plot_V_fun(svd4_46, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-#### Plotting in dimensions {.tabset}
+### Plotting in dimensions {.tabset}
 
-```{r, fig.width = 4, fig.asp = 0.67}
-U_fun(svd4_46, "children", TRUE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = property)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd4_46, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
-       subtitle = "U: Capacities in first two modes",
-       # subtitle = "U x S: Capacities in first two modes",
+       subtitle = "V: Characters in Modes 1 & 2", 
        x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd4_46, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "V: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd4_46, "children", TRUE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "V: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
-```{r, fig.width = 4, fig.asp = 0.67}
-V_fun(svd4_46, "children", TRUE, FALSE) %>%
-  filter(mode %in% c("mode_01", "mode_02")) %>%
-  # select(-S) %>%
-  spread(mode, value) %>%
-  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
-  geom_point() +
-  ggrepel::geom_text_repel(size = 3) +
-  scale_x_continuous(breaks = seq(-100, 100, .25)) +
-  scale_y_continuous(breaks = seq(-100, 100, .25)) +
-  theme_minimal() +
-  # coord_equal() +
-  labs(title = "SVD: Children, 4-6y (Approach #2)",
-       subtitle = "V: Characters in first two modes",
-       # subtitle = "V X S: Characters in first two modes",
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd4_46, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd4_46, "children", TRUE, FALSE, 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "U: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd4_46, "children", TRUE, FALSE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-6y (Approach #4)",
+       subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
 ```
 
 
