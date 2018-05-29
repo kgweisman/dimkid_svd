@@ -108,16 +108,21 @@ mean_cent_fun <- function(df,
 }
 
 U_fun <- function(svd,
-                       age_group = c("adults", "children"),
-                       transpose = c(FALSE, TRUE),
-                       multiply = c(FALSE, TRUE)){
+                  age_group = c("adults", "children", "children_comb"),
+                  transpose = c(FALSE, TRUE),
+                  multiply = c(FALSE, TRUE)){
 
   if(transpose == FALSE) {
     if(age_group == "adults"){y_names <- character_names_ad}
     if(age_group == "children"){y_names <- character_names_ch}
+    if(age_group == "children_comb"){
+      y_names <- c(paste(character_names_ch, "79", sep = "_"),
+                   paste(character_names_ch, "46", sep = "_"))
+    }
   } else if(transpose == TRUE) {
     if(age_group == "adults"){y_names <- capacity_names_ad}
     if(age_group == "children"){y_names <- capacity_names_ch}
+    if(age_group == "children_comb"){y_names <- capacity_names_ch}
   }  
   
   S <- svd$d
@@ -145,7 +150,7 @@ U_fun <- function(svd,
 }
 
 plot_U_fun <- function(svd,
-                       age_group = c("adults", "children"),
+                       age_group = c("adults", "children", "children_comb"),
                        transpose = c(FALSE, TRUE),
                        multiply = c(FALSE, TRUE)){
 
@@ -163,7 +168,7 @@ plot_U_fun <- function(svd,
 }
 
 plot_U_fun_prop <- function(svd, 
-                            age_group = c("adults", "children"),
+                            age_group = c("adults", "children", "children_comb"),
                             transpose = FALSE,
                             multiply = FALSE,
                             efa_colors = FALSE,
@@ -179,6 +184,7 @@ plot_U_fun_prop <- function(svd,
   if(efa_colors == TRUE){
     if(age_group == "adults"){colors <- efa_colors_ad}
     if(age_group == "children"){colors <- efa_colors_79}
+    if(age_group == "children_comb"){colors <- efa_colors_79}
     df_plot <- df_plot %>%
       full_join(colors %>% 
                   distinct(capacity, factor) %>% 
@@ -190,25 +196,35 @@ plot_U_fun_prop <- function(svd,
              factor = factor(factor))
   }
 
-  plot <- df_plot %>%
-    spread(mode, value) %>%
-    ggplot(aes(x = .[3], y = .[4], label = property, color = factor)) +
-    geom_point() +
-    ggrepel::geom_text_repel(size = 3) +
-    scale_x_continuous(breaks = seq(-100, 100, .1)) +
-    scale_y_continuous(breaks = seq(-100, 100, .1)) +
-    theme_minimal()
-  
   if(efa_colors == TRUE){
+    plot <- df_plot %>%
+        spread(mode, value) %>%
+        ggplot(aes(x = .[3], y = .[4], label = property, color = factor)) +
+        geom_point() +
+        ggrepel::geom_text_repel(size = 3) +
+        scale_x_continuous(breaks = seq(-100, 100, .1)) +
+        scale_y_continuous(breaks = seq(-100, 100, .1)) +
+        theme_minimal()
+
     if(age_group == "adults"){
-      plot <- plot + 
+      plot <- plot +
         scale_color_brewer(palette = "Set1")
     } else {
       plot <- plot + 
         scale_color_manual(values = c("#377eb8", "#4daf4a", "#e41a1c"))
     }
   } else {
-    plot <- plot + scale_color_manual(values = "black")
+    plot <- df_plot %>%
+      spread(mode, value) %>%
+      ggplot(aes(x = .[3], y = .[4], label = property, color = property)) +
+      geom_point() +
+      ggrepel::geom_text_repel(size = 3) +
+      scale_x_continuous(breaks = seq(-100, 100, .1)) +
+      scale_y_continuous(breaks = seq(-100, 100, .1)) +
+      theme_minimal() +
+      scale_color_manual(guide = "none",
+                         values = rep("black", 
+                                      length(levels(df_plot$property))))
   }
   
   return(plot)
@@ -243,16 +259,21 @@ plot_S_fun <- function(svd){
 }
 
 V_fun <- function(svd,
-                       age_group = c("adults", "children"),
-                       transpose = c(FALSE, TRUE),
-                       multiply = c(FALSE, TRUE)){
+                  age_group = c("adults", "children", "children_comb"),
+                  transpose = c(FALSE, TRUE),
+                  multiply = c(FALSE, TRUE)){
 
   if(transpose == FALSE) {
     if(age_group == "adults"){y_names <- capacity_names_ad}
     if(age_group == "children"){y_names <- capacity_names_ch}
+    if(age_group == "children_comb"){y_names <- capacity_names_ch}
   } else if(transpose == TRUE) {
     if(age_group == "adults"){y_names <- character_names_ad}
     if(age_group == "children"){y_names <- character_names_ch}
+    if(age_group == "children_comb"){
+      y_names <- c(paste(character_names_ch, "79", sep = "_"),
+                   paste(character_names_ch, "46", sep = "_"))
+    }
   }
   
   S <- svd$d
@@ -279,7 +300,7 @@ V_fun <- function(svd,
 }
 
 plot_V_fun <- function(svd,
-                       age_group = c("adults", "children"),
+                       age_group = c("adults", "children", "children_comb"),
                        transpose = c(FALSE, TRUE),
                        multiply = c(FALSE, TRUE)){
 
@@ -297,7 +318,7 @@ plot_V_fun <- function(svd,
 }
 
 plot_V_fun_item <- function(svd, 
-                            age_group = c("adults", "children"),
+                            age_group = c("adults", "children", "children_comb"),
                             transpose = FALSE,
                             multiply = FALSE,
                             efa_colors = FALSE,
@@ -313,6 +334,7 @@ plot_V_fun_item <- function(svd,
   if(efa_colors == TRUE){
     if(age_group == "adults"){colors <- efa_colors_ad}
     if(age_group == "children"){colors <- efa_colors_79}
+    if(age_group == "children_comb"){colors <- efa_colors_79}
     df_plot <- df_plot %>%
       full_join(colors %>% 
                   distinct(capacity, factor) %>% 
@@ -324,16 +346,17 @@ plot_V_fun_item <- function(svd,
              factor = factor(factor))
   }
 
-  plot <- df_plot %>%
-    spread(mode, value) %>%
-    ggplot(aes(x = .[3], y = .[4], label = item, color = factor)) +
-    geom_point() +
-    ggrepel::geom_text_repel(size = 3) +
-    scale_x_continuous(breaks = seq(-100, 100, .1)) +
-    scale_y_continuous(breaks = seq(-100, 100, .1)) +
-    theme_minimal()
-
   if(efa_colors == TRUE){
+
+    plot <- df_plot %>%
+      spread(mode, value) %>%
+      ggplot(aes(x = .[3], y = .[4], label = item, color = factor)) +
+      geom_point() +
+      ggrepel::geom_text_repel(size = 3) +
+      scale_x_continuous(breaks = seq(-100, 100, .1)) +
+      scale_y_continuous(breaks = seq(-100, 100, .1)) +
+      theme_minimal()
+    
     if(age_group == "adults"){
       plot <- plot + 
         scale_color_brewer(palette = "Set1")
@@ -342,7 +365,16 @@ plot_V_fun_item <- function(svd,
         scale_color_manual(values = c("#377eb8", "#4daf4a", "#e41a1c"))
     }
   } else {
-    plot <- plot + scale_color_manual(values = "black")
+    plot <- df_plot %>%
+      spread(mode, value) %>%
+      ggplot(aes(x = .[3], y = .[4], label = item, color = item)) +
+      geom_point() +
+      ggrepel::geom_text_repel(size = 3) +
+      scale_x_continuous(breaks = seq(-100, 100, .1)) +
+      scale_y_continuous(breaks = seq(-100, 100, .1)) +
+      theme_minimal() +
+      scale_color_manual(guide = "none",
+                         values = rep("black", length(levels(df_plot$item))))
   }
   
   return(plot)
@@ -350,7 +382,7 @@ plot_V_fun_item <- function(svd,
 }
 
 reconstruct_fun <- function(svd,
-                            age_group = c("adults", "children"),
+                            age_group = c("adults", "children", "children_comb"),
                             transpose = c(FALSE, TRUE)){
 
   if(age_group == "adults"){
@@ -360,6 +392,11 @@ reconstruct_fun <- function(svd,
   if(age_group == "children"){
       capacity_names <- capacity_names_ch
       character_names <- character_names_ch
+  }
+  if(age_group == "children_comb"){
+    capacity_names <- capacity_names_ch
+    character_names <- c(paste(character_names_ch, "79", sep = "_"),
+                         paste(character_names_ch, "46", sep = "_"))
   }
   
   if(transpose == FALSE){
@@ -390,9 +427,10 @@ reconstruct_fun <- function(svd,
   return(OP_sum)
 }
 
-plot_reconstruct_fun <- function(svd, 
-                       age_group = c("adults", "children"),
-                       transpose = c(FALSE, TRUE)){
+plot_reconstruct_fun <- function(svd,
+                                 age_group = c("adults", 
+                                               "children", "children_comb"),
+                                 transpose = c(FALSE, TRUE)){
 
   OP_sum <- reconstruct_fun(svd, age_group, transpose)
 
@@ -583,6 +621,7 @@ d_46 %>%
        y = "Character",
        fill = "Mean rating")
 ```
+
 
 
 ## SVD {.tabset}
@@ -848,6 +887,105 @@ plot_U_fun_prop(svd1_46, "children",
   labs(title = "SVD: Children, 4-6y (Approach #1)",
        subtitle = "U: Characters in Modes 2 & 3",
        x = "Mode 2", y = "Mode 3")
+```
+
+
+### Children, 4-9y
+
+```{r}
+svd1_49 <- svd(d_79 %>%
+                 mutate(character = paste(character, "79", sep = "_")) %>%
+                 bind_rows(d_46 %>%
+                             mutate(character = paste(character, "46", 
+                                                      sep = "_"))) %>% 
+                 column_to_rownames("character"), 
+               nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
+```
+
+#### Reconstructed data
+
+```{r, fig.width = 4, fig.asp = 0.67}
+plot_reconstruct_fun(svd1_49, transpose = FALSE, "children_comb") +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+#### Feature vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd1_49, "children_comb", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Singular values
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd1_49) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+#### Item vectors
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_V_fun(svd1_49, "children_comb", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Plotting in dimensions
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd1_49, "children_comb", efa_colors = TRUE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "V: Capacities in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd1_49, "children_comb", efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd1_49, "children_comb", efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
+```
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd1_49, "children_comb", 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "U: Characters in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_U_fun_prop(svd1_49, "children_comb", 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_U_fun_prop(svd1_49, "children_comb",  
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
 ```
 
 
@@ -1180,6 +1318,106 @@ plot_U_fun_prop(svd2_46, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #2)",
        subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
+```
+
+
+### Children, 4-9y
+
+```{r}
+svd2_49 <- svd(d_79 %>%
+                 mutate(character = paste(character, "79", sep = "_")) %>%
+                 bind_rows(d_46 %>%
+                             mutate(character = paste(character, "46", 
+                                                      sep = "_"))) %>% 
+                 column_to_rownames("character") %>%
+                 t(), 
+               nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
+```
+
+#### Reconstructed data
+
+```{r, fig.width = 4, fig.asp = 0.67}
+plot_reconstruct_fun(svd2_49, transpose = TRUE, "children_comb") +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+#### Feature vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd2_49, "children_comb", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Singular values
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd2_49) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+#### Item vectors
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_V_fun(svd2_49, "children_comb", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Plotting in dimensions
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd2_49, "children_comb", transpose = TRUE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "V: Capacities in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_V_fun_item(svd2_49, "children_comb", transpose = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_V_fun_item(svd2_49, "children_comb", transpose = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+```
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd2_49, "children_comb", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "U: Characters in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd2_49, "children_comb", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd2_49, "children_comb", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "U: Characters in Modes 2 & 3",
        x = "Mode 2", y = "Mode 3")
 ```
 
@@ -1526,6 +1764,106 @@ plot_U_fun_prop(svd3_46, "children", transpose = FALSE,
 ```
 
 
+### Children, 4-9y
+
+```{r}
+svd3_49 <- svd(d_79 %>%
+                 mutate(character = paste(character, "79", sep = "_")) %>%
+                 bind_rows(d_46 %>%
+                             mutate(character = paste(character, "46", 
+                                                      sep = "_"))) %>% 
+                 mean_cent_fun("capacity", age_group = "children") %>%
+                 column_to_rownames("character"), 
+               nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
+```
+
+#### Reconstructed data
+
+```{r, fig.width = 4, fig.asp = 0.67}
+plot_reconstruct_fun(svd3_49, transpose = FALSE, "children_comb") +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+#### Feature vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd3_49, "children_comb", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Singular values
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd3_49) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+#### Item vectors
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_V_fun(svd3_49, "children_comb", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Plotting in dimensions
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd3_49, "children_comb", efa_colors = TRUE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "V: Capacities in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd3_49, "children_comb", efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd3_49, "children_comb", efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
+```
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd3_49, "children_comb", 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_U_fun_prop(svd3_49, "children_comb", 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_U_fun_prop(svd3_49, "children_comb",  
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #3)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+```
+
+
 # Approach #4
 
 In Approach #4 we mean-center by character, with capacities as rows and characters as columns.
@@ -1867,6 +2205,106 @@ plot_U_fun_prop(svd4_46, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "U: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
+```
+
+
+### Children, 4-9y
+
+```{r}
+svd4_49 <- svd(d_79 %>%
+                 mutate(character = paste(character, "79", sep = "_")) %>%
+                 bind_rows(d_46 %>%
+                             mutate(character = paste(character, "46", 
+                                                      sep = "_"))) %>% 
+                 mean_cent_fun("character", age_group = "children") %>%
+                 column_to_rownames("capacity"), 
+               nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
+```
+
+#### Reconstructed data
+
+```{r, fig.width = 4, fig.asp = 0.67}
+plot_reconstruct_fun(svd4_49, transpose = TRUE, "children_comb") +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "")
+```
+
+#### Feature vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd4_49, "children_comb", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Singular values
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd4_49) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+#### Item vectors
+
+```{r, fig.width = 3, fig.asp = 1.49}
+plot_V_fun(svd4_49, "children_comb", transpose = TRUE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+#### Plotting in dimensions
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd4_49, "children_comb", transpose = TRUE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "V: Capacities in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_V_fun_item(svd4_49, "children_comb", transpose = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+
+plot_V_fun_item(svd4_49, "children_comb", transpose = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3") +
+  scale_color_manual(guide = "none",
+                     values = c(rep("black", 9), rep("dodgerblue", 9)))
+```
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd4_49, "children_comb", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "U: Characters in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd4_49, "children_comb", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd4_49, "children_comb", transpose = TRUE, efa_colors = TRUE,
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #4)",
+       subtitle = "U: Characters in Modes 2 & 3",
        x = "Mode 2", y = "Mode 3")
 ```
 
