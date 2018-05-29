@@ -4,6 +4,7 @@ output:
   html_notebook:
     toc: true
     toc_float: true
+    toc_depth: 3
 ---
 
 ```{r, include = F}
@@ -13,6 +14,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE)
 ```{r setup, include = F}
 library(tidyverse)
 library(rms)
+library(psych)
 ```
 
 ```{r data, include = F}
@@ -415,7 +417,9 @@ In this document, I explore 4 approaches to SVD with Dimkid data:
 4. Mean-centering by character, capacities as rows and characters as columns
 
 
-# Factor analysis {.tabset}
+# Factor analysis
+
+[Not shown here.]
 
 ```{r, fig.width = 3, fig.asp = 1.49, include = F}
 efa_loadings_ad <- fa(d_ad %>% column_to_rownames("character"),
@@ -590,12 +594,16 @@ svd1_ad <- svd(d_ad %>% column_to_rownames("character"),
                nrow(d_ad), nrow(d_ad))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 4, fig.asp = 0.67}
 plot_reconstruct_fun(svd1_ad, transpose = FALSE, "adults") +
   labs(title = "SVD: Adults (Approach #1)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_U_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
@@ -605,12 +613,16 @@ plot_U_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd1_ad) +
   labs(title = "SVD: Adults (Approach #1)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_V_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
@@ -620,7 +632,7 @@ plot_V_fun(svd1_ad, "adults", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
 plot_V_fun_item(svd1_ad, "adults", efa_colors = TRUE, 
@@ -670,12 +682,16 @@ svd1_79 <- svd(d_79 %>% column_to_rownames("character"),
                nrow(d_79), nrow(d_79))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 4, fig.asp = 0.67}
 plot_reconstruct_fun(svd1_79, transpose = FALSE, "children") +
   labs(title = "SVD: Children, 7-9y (Approach #1)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_U_fun(svd1_79, "children", transpose = FALSE, multiply = FALSE) +
@@ -685,12 +701,16 @@ plot_U_fun(svd1_79, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd1_79) +
   labs(title = "SVD: Children, 7-9y (Approach #1)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_V_fun(svd1_79, "children", transpose = FALSE, multiply = FALSE) +
@@ -700,7 +720,7 @@ plot_V_fun(svd1_79, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
 plot_V_fun_item(svd1_79, "children", efa_colors = TRUE,
@@ -750,12 +770,16 @@ svd1_46 <- svd(d_46 %>% column_to_rownames("character"),
                nrow(d_46), nrow(d_46))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 4, fig.asp = 0.67}
 plot_reconstruct_fun(svd1_46, transpose = FALSE, "children") +
   labs(title = "SVD: Children, 4-6y (Approach #1)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_U_fun(svd1_46, "children", transpose = FALSE, multiply = FALSE) +
@@ -765,12 +789,16 @@ plot_U_fun(svd1_46, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd1_46) +
   labs(title = "SVD: Children, 4-6y (Approach #1)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_V_fun(svd1_46, "children", transpose = FALSE, multiply = FALSE) +
@@ -780,7 +808,7 @@ plot_V_fun(svd1_46, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
 plot_V_fun_item(svd1_46, "children", efa_colors = TRUE, 
@@ -899,12 +927,16 @@ svd2_ad <- svd(d_ad %>% column_to_rownames("character") %>% t(),
                nrow(d_ad), nrow(d_ad))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_reconstruct_fun(svd2_ad, "adults", TRUE) +
   labs(title = "SVD: Adults (Approach #2)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_U_fun(svd2_ad, "adults", transpose = TRUE, multiply = FALSE) +
@@ -914,12 +946,16 @@ plot_U_fun(svd2_ad, "adults", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd2_ad) +
   labs(title = "SVD: Adults (Approach #2)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_V_fun(svd2_ad, "adults", transpose = TRUE, multiply = FALSE) +
@@ -929,7 +965,7 @@ plot_V_fun(svd2_ad, "adults", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
 plot_V_fun_item(svd2_ad, "adults", transpose = TRUE, 
@@ -979,12 +1015,16 @@ svd2_79 <- svd(d_79 %>% column_to_rownames("character") %>% t(),
                nrow(d_79), nrow(d_79))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_reconstruct_fun(svd2_79, "children", TRUE) +
   labs(title = "SVD: Children, 7-9y (Approach #2)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_U_fun(svd2_79, "children", transpose = TRUE, multiply = FALSE) +
@@ -994,12 +1034,16 @@ plot_U_fun(svd2_79, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd2_79) +
   labs(title = "SVD: Children, 7-9y (Approach #2)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_V_fun(svd2_79, "children", transpose = TRUE, multiply = FALSE) +
@@ -1009,7 +1053,7 @@ plot_V_fun(svd2_79, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
 plot_V_fun_item(svd2_79, "children", transpose = TRUE,
@@ -1059,12 +1103,16 @@ svd2_46 <- svd(d_46 %>% column_to_rownames("character") %>% t(),
                nrow(d_46), nrow(d_46))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_reconstruct_fun(svd2_46, "children", TRUE) +
   labs(title = "SVD: Children, 4-6y (Approach #2)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_U_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
@@ -1074,12 +1122,16 @@ plot_U_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd2_46) +
   labs(title = "SVD: Children, 4-6y (Approach #2)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_V_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
@@ -1089,7 +1141,7 @@ plot_V_fun(svd2_46, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
 plot_V_fun_item(svd2_46, "children", transpose = TRUE, 
@@ -1213,12 +1265,16 @@ svd3_ad <- svd(d_ad %>%
                nrow(d_ad), nrow(d_ad))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 4, fig.asp = 0.67}
 plot_reconstruct_fun(svd3_ad, transpose = FALSE, "adults") +
   labs(title = "SVD: Adults (Approach #3)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_U_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
@@ -1228,12 +1284,16 @@ plot_U_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd3_ad) +
   labs(title = "SVD: Adults (Approach #3)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_V_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
@@ -1243,22 +1303,22 @@ plot_V_fun(svd3_ad, "adults", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_V_fun_item(svd3_ad, "adults", FALSE, FALSE, 
+plot_V_fun_item(svd3_ad, "adults", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #3)",
-       subtitle = "V: Capacities in Modes 1 & 2", 
+       subtitle = "V: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_V_fun_item(svd3_ad, "adults", FALSE, FALSE, 
+plot_V_fun_item(svd3_ad, "adults", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Adults (Approach #3)",
        subtitle = "V: Capacities in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_V_fun_item(svd3_ad, "adults", FALSE, FALSE, 
+plot_V_fun_item(svd3_ad, "adults", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Adults (Approach #3)",
        subtitle = "V: Capacities in Modes 2 & 3",
@@ -1266,19 +1326,19 @@ plot_V_fun_item(svd3_ad, "adults", FALSE, FALSE,
 ```
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_U_fun_prop(svd3_ad, "adults", FALSE, FALSE, 
+plot_U_fun_prop(svd3_ad, "adults", transpose = FALSE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #3)",
        subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_U_fun_prop(svd3_ad, "adults", FALSE, FALSE, 
+plot_U_fun_prop(svd3_ad, "adults", transpose = FALSE, 
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Adults (Approach #3)",
        subtitle = "U: Characters in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_U_fun_prop(svd3_ad, "adults", FALSE, FALSE, 
+plot_U_fun_prop(svd3_ad, "adults", transpose = FALSE, 
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Adults (Approach #3)",
        subtitle = "U: Characters in Modes 2 & 3",
@@ -1295,12 +1355,16 @@ svd3_79 <- svd(d_79 %>%
                nrow(d_79), nrow(d_79))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 4, fig.asp = 0.67}
 plot_reconstruct_fun(svd3_79, transpose = FALSE, "children") +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_U_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
@@ -1310,12 +1374,16 @@ plot_U_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd3_79) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_V_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
@@ -1325,22 +1393,22 @@ plot_V_fun(svd3_79, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_V_fun_item(svd3_79, "children", FALSE, FALSE, 
+plot_V_fun_item(svd3_79, "children", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
-       subtitle = "V: Capacities in Modes 1 & 2", 
+       subtitle = "V: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_V_fun_item(svd3_79, "children", FALSE, FALSE, 
+plot_V_fun_item(svd3_79, "children", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
        subtitle = "V: Capacities in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_V_fun_item(svd3_79, "children", FALSE, FALSE, 
+plot_V_fun_item(svd3_79, "children", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
        subtitle = "V: Capacities in Modes 2 & 3",
@@ -1348,19 +1416,19 @@ plot_V_fun_item(svd3_79, "children", FALSE, FALSE,
 ```
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_U_fun_prop(svd3_79, "children", FALSE, FALSE, 
+plot_U_fun_prop(svd3_79, "children", transpose = FALSE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
        subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_U_fun_prop(svd3_79, "children", FALSE, FALSE, 
+plot_U_fun_prop(svd3_79, "children", transpose = FALSE, 
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
        subtitle = "U: Characters in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_U_fun_prop(svd3_79, "children", FALSE, FALSE, 
+plot_U_fun_prop(svd3_79, "children", transpose = FALSE, 
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #3)",
        subtitle = "U: Characters in Modes 2 & 3",
@@ -1377,12 +1445,16 @@ svd3_46 <- svd(d_46 %>%
                nrow(d_46), nrow(d_46))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 4, fig.asp = 0.67}
 plot_reconstruct_fun(svd3_46, transpose = FALSE, "children") +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_U_fun(svd3_46, "children", transpose = FALSE, multiply = FALSE) +
@@ -1392,12 +1464,16 @@ plot_U_fun(svd3_46, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd3_46) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_V_fun(svd3_46, "children", transpose = FALSE, multiply = FALSE) +
@@ -1407,22 +1483,22 @@ plot_V_fun(svd3_46, "children", transpose = FALSE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_V_fun_item(svd3_46, "children", FALSE, FALSE, 
+plot_V_fun_item(svd3_46, "children", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
-       subtitle = "V: Capacities in Modes 1 & 2", 
+       subtitle = "V: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_V_fun_item(svd3_46, "children", FALSE, FALSE, 
+plot_V_fun_item(svd3_46, "children", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
        subtitle = "V: Capacities in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_V_fun_item(svd3_46, "children", FALSE, FALSE, 
+plot_V_fun_item(svd3_46, "children", transpose = FALSE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
        subtitle = "V: Capacities in Modes 2 & 3",
@@ -1430,19 +1506,19 @@ plot_V_fun_item(svd3_46, "children", FALSE, FALSE,
 ```
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_U_fun_prop(svd3_46, "children", FALSE, FALSE, 
+plot_U_fun_prop(svd3_46, "children", transpose = FALSE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
        subtitle = "U: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_U_fun_prop(svd3_46, "children", FALSE, FALSE, 
+plot_U_fun_prop(svd3_46, "children", transpose = FALSE, 
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
        subtitle = "U: Characters in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_U_fun_prop(svd3_46, "children", FALSE, FALSE, 
+plot_U_fun_prop(svd3_46, "children", transpose = FALSE, 
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #3)",
        subtitle = "U: Characters in Modes 2 & 3",
@@ -1534,12 +1610,16 @@ svd4_ad <- svd(d_ad %>%
                nrow(d_ad), nrow(d_ad))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_reconstruct_fun(svd4_ad, transpose = TRUE, "adults") +
   labs(title = "SVD: Adults (Approach #4)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_U_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
@@ -1549,12 +1629,16 @@ plot_U_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd4_ad) +
   labs(title = "SVD: Adults (Approach #4)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_V_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
@@ -1564,22 +1648,22 @@ plot_V_fun(svd4_ad, "adults", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_V_fun_item(svd4_ad, "adults", TRUE, FALSE, 
+plot_V_fun_item(svd4_ad, "adults", transpose = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #4)",
-       subtitle = "V: Characters in Modes 1 & 2", 
+       subtitle = "V: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_V_fun_item(svd4_ad, "adults", TRUE, FALSE, 
+plot_V_fun_item(svd4_ad, "adults", transpose = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Adults (Approach #4)",
        subtitle = "V: Characters in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_V_fun_item(svd4_ad, "adults", TRUE, FALSE, 
+plot_V_fun_item(svd4_ad, "adults", transpose = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Adults (Approach #4)",
        subtitle = "V: Characters in Modes 2 & 3",
@@ -1587,19 +1671,19 @@ plot_V_fun_item(svd4_ad, "adults", TRUE, FALSE,
 ```
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_U_fun_prop(svd4_ad, "adults", TRUE, FALSE, 
+plot_U_fun_prop(svd4_ad, "adults", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Adults (Approach #4)",
        subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_U_fun_prop(svd4_ad, "adults", TRUE, FALSE, 
+plot_U_fun_prop(svd4_ad, "adults", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Adults (Approach #4)",
        subtitle = "U: Capacities in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_U_fun_prop(svd4_ad, "adults", TRUE, FALSE, 
+plot_U_fun_prop(svd4_ad, "adults", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Adults (Approach #4)",
        subtitle = "U: Capacities in Modes 2 & 3",
@@ -1616,12 +1700,16 @@ svd4_79 <- svd(d_79 %>%
                nrow(d_79), nrow(d_79))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_reconstruct_fun(svd4_79, transpose = TRUE, "children") +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_U_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
@@ -1631,12 +1719,16 @@ plot_U_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd4_79) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_V_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
@@ -1646,22 +1738,22 @@ plot_V_fun(svd4_79, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_V_fun_item(svd4_79, "children", TRUE, FALSE, 
+plot_V_fun_item(svd4_79, "children", transpose = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
-       subtitle = "V: Characters in Modes 1 & 2", 
+       subtitle = "V: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_V_fun_item(svd4_79, "children", TRUE, FALSE, 
+plot_V_fun_item(svd4_79, "children", transpose = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
        subtitle = "V: Characters in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_V_fun_item(svd4_79, "children", TRUE, FALSE, 
+plot_V_fun_item(svd4_79, "children", transpose = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
        subtitle = "V: Characters in Modes 2 & 3",
@@ -1669,19 +1761,19 @@ plot_V_fun_item(svd4_79, "children", TRUE, FALSE,
 ```
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_U_fun_prop(svd4_79, "children", TRUE, FALSE, 
+plot_U_fun_prop(svd4_79, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
        subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_U_fun_prop(svd4_79, "children", TRUE, FALSE, 
+plot_U_fun_prop(svd4_79, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
        subtitle = "U: Capacities in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_U_fun_prop(svd4_79, "children", TRUE, FALSE, 
+plot_U_fun_prop(svd4_79, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 7-9y (Approach #4)",
        subtitle = "U: Capacities in Modes 2 & 3",
@@ -1698,12 +1790,16 @@ svd4_46 <- svd(d_46 %>%
                nrow(d_46), nrow(d_46))
 ```
 
+#### Reconstructed data
+
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_reconstruct_fun(svd4_46, transpose = TRUE, "children") +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
        x = "", y = "")
 ```
+
+#### Feature vectors
 
 ```{r, fig.width = 3, fig.asp = 1.49}
 plot_U_fun(svd4_46, "children", transpose = TRUE, multiply = FALSE) +
@@ -1713,12 +1809,16 @@ plot_U_fun(svd4_46, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
+#### Singular values
+
 ```{r, fig.width = 3, fig.asp = 1}
 plot_S_fun(svd4_46) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "S: Singular values (by mode)",
        x = "", y = "")
 ```
+
+#### Item vectors
 
 ```{r, fig.width = 3, fig.asp = 1}
 plot_V_fun(svd4_46, "children", transpose = TRUE, multiply = FALSE) +
@@ -1728,22 +1828,22 @@ plot_V_fun(svd4_46, "children", transpose = TRUE, multiply = FALSE) +
        x = "", y = "")
 ```
 
-### Plotting in dimensions {.tabset}
+#### Plotting in dimensions
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_V_fun_item(svd4_46, "children", TRUE, FALSE, 
+plot_V_fun_item(svd4_46, "children", transpose = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
-       subtitle = "V: Characters in Modes 1 & 2", 
+       subtitle = "V: Characters in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_V_fun_item(svd4_46, "children", TRUE, FALSE, 
+plot_V_fun_item(svd4_46, "children", transpose = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "V: Characters in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_V_fun_item(svd4_46, "children", TRUE, FALSE, 
+plot_V_fun_item(svd4_46, "children", transpose = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "V: Characters in Modes 2 & 3",
@@ -1751,19 +1851,19 @@ plot_V_fun_item(svd4_46, "children", TRUE, FALSE,
 ```
 
 ```{r, fig.width = 4, fig.asp = 1}
-plot_U_fun_prop(svd4_46, "children", TRUE, FALSE, 
+plot_U_fun_prop(svd4_46, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_02")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "U: Capacities in Modes 1 & 2",
        x = "Mode 1", y = "Mode 2")
 
-plot_U_fun_prop(svd4_46, "children", TRUE, FALSE, 
+plot_U_fun_prop(svd4_46, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_01", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "U: Capacities in Modes 1 & 3",
        x = "Mode 1", y = "Mode 3")
 
-plot_U_fun_prop(svd4_46, "children", TRUE, FALSE, 
+plot_U_fun_prop(svd4_46, "children", transpose = TRUE, efa_colors = TRUE,
                 modes = c("mode_02", "mode_03")) +
   labs(title = "SVD: Children, 4-6y (Approach #4)",
        subtitle = "U: Capacities in Modes 2 & 3",
