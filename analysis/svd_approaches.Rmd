@@ -1080,6 +1080,7 @@ d_46 %>%
 ```{r}
 svd3_ad <- svd(d_ad %>%
                  mean_cent_fun("capacity", age_group = "adults") %>%
+                 arrange(character) %>%
                  column_to_rownames("character"),
                nrow(d_ad), nrow(d_ad))
 ```
@@ -1170,6 +1171,7 @@ plot_U_fun_prop(svd3_ad, "adults", transpose = FALSE,
 ```{r}
 svd3_79 <- svd(d_79 %>%
                  mean_cent_fun("capacity", age_group = "children") %>%
+                 arrange(character) %>%
                  column_to_rownames("character"),
                nrow(d_79), nrow(d_79))
 ```
@@ -1260,6 +1262,7 @@ plot_U_fun_prop(svd3_79, "children", transpose = FALSE,
 ```{r}
 svd3_46 <- svd(d_46 %>%
                  mean_cent_fun("capacity", age_group = "children") %>%
+                 arrange(character) %>%
                  column_to_rownames("character"),
                nrow(d_46), nrow(d_46))
 ```
@@ -1354,6 +1357,12 @@ svd3_49 <- svd(d_79 %>%
                              mutate(character = paste(character, "46", 
                                                       sep = "_"))) %>% 
                  mean_cent_fun("capacity", age_group = "children") %>%
+                 mutate(character = factor(character,
+                                           levels = c(paste0(levels(d_79$character), 
+                                                             "_79"),
+                                                      paste0(levels(d_79$character),
+                                                             "_46")))) %>%
+                 arrange(character) %>%
                  column_to_rownames("character"), 
                nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
 ```
@@ -1577,6 +1586,7 @@ d_46 %>%
 ```{r}
 svd4_ad <- svd(d_ad %>% 
                  mean_cent_fun("character", age_group = "adults") %>%
+                 arrange(capacity) %>%
                  column_to_rownames("capacity"),
                nrow(d_ad), nrow(d_ad))
 ```
@@ -1667,6 +1677,7 @@ plot_U_fun_prop(svd4_ad, "adults", transpose = TRUE, efa_colors = TRUE,
 ```{r}
 svd4_79 <- svd(d_79 %>% 
                  mean_cent_fun("character", age_group = "children") %>%
+                 arrange(capacity) %>%
                  column_to_rownames("capacity"),
                nrow(d_79), nrow(d_79))
 ```
@@ -1757,6 +1768,7 @@ plot_U_fun_prop(svd4_79, "children", transpose = TRUE, efa_colors = TRUE,
 ```{r}
 svd4_46 <- svd(d_46 %>% 
                  mean_cent_fun("character", age_group = "children") %>%
+                 arrange(capacity) %>%
                  column_to_rownames("capacity"),
                nrow(d_46), nrow(d_46))
 ```
@@ -1851,7 +1863,11 @@ svd4_49 <- svd(d_79 %>%
                              mutate(character = paste(character, "46", 
                                                       sep = "_"))) %>% 
                  mean_cent_fun("character", age_group = "children") %>%
-                 column_to_rownames("capacity"), 
+                 column_to_rownames("capacity") %>%
+                 select(computer_79, robot_79, doll_79, teddy_bear_79, 
+                        beetle_79, bird_79, mouse_79, goat_79, elephant_79,
+                        computer_46, robot_46, doll_46, teddy_bear_46, 
+                        beetle_46, bird_46, mouse_46, goat_46, elephant_46), 
                nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
 ```
 

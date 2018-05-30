@@ -19,10 +19,6 @@ mean_cent_fun <- function(df,
   
   if(by == "character"){
     not_by <- "capacity"
-    # df <- df %>%
-    #   gather(capacity, mean_rating, -character) %>%
-    #   mutate(capacity = factor(capacity, levels = capacity_names)) %>%
-    #   spread(character, mean_rating)
   }
   
   df_cent <- df %>%
