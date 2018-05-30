@@ -1,0 +1,450 @@
+---
+title: "Dimkid: SVD Combining Age Groups"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+---
+
+```{r, include = F}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+```{r setup, include = F}
+library(tidyverse)
+library(rms)
+library(psych)
+```
+
+```{r data, include = F}
+source("scripts/import_data.R")
+```
+```{r functions, include = F}
+source("scripts/make_functions_comb.R")
+source("scripts/do_efa.R")
+```
+
+In this document, I explore how children's use of "modes" differs across age groups. I focus here on Approach #1 from `svd_approaches.Rmd`: No mean-centering, characters as rows and capacities as columns.
+
+I try out 2 different methods for combining these age groups:
+
+1. Treat the evaluations of a given character by each of the two age groups as if they were distinct "characters," yielding 18 total characters instead of 9.
+2. Treat the evaluations of a given capacity by each of the two age groups as if they were distinct "capacities," yielding 40 total capacities instead of 20.
+
+It will be important to think through this using other "Approaches" (see `svd_approaches.Rmd`); this is a starting point.
+
+As a reminder, in this study, 123 7- to 9-year-old and 124 4- to 6-year-old US children rated 9 characters (between-subjects) on 20 capacities (within subjects). (See Weisman, Dweck, & Markman, 2018, _Proc. CogSci_.)
+
+
+# Combination Method #1
+
+## Raw data matrix visualizations
+
+```{r, fig.width = 4, fig.asp = 1}
+d_method1 <- d_79 %>%
+  mutate(character = paste0(character, "_79")) %>%
+  full_join(d_46 %>% mutate(character = paste0(character, "_46"))) %>%
+  gather(capacity, mean_rating, -character) %>%
+  mutate(character = factor(character,
+                            levels = c("computer_79", "robot_79", "doll_79",
+                                       "teddy_bear_79", "beetle_79", "bird_79",
+                                       "mouse_79", "goat_79", "elephant_79",
+                                       "computer_46", "robot_46", "doll_46",
+                                       "teddy_bear_46", "beetle_46", "bird_46",
+                                       "mouse_46", "goat_46", "elephant_46"))) %>%
+  spread(capacity, mean_rating)
+
+d_method1 %>%
+  gather(capacity, mean_rating, -character) %>%
+  mutate(age_group = factor(gsub("^.*_", "", character))) %>%
+  ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", # limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 15)) +
+  geom_hline(yintercept = 9.5, size = 1, color = "blue") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        panel.grid = element_blank()) +
+  labs(title = "Raw data: 4- to 9-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       x = "Capacity", y = "Character",
+       fill = "Mean Rating")
+```
+
+## SVD
+
+```{r}
+svd1.1_49 <- svd(d_method1 %>% column_to_rownames("character"), 
+               nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
+```
+
+## Reconstructed data
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_reconstruct_fun(svd1.1_49, "children_comb_char") +
+  labs(title = "SVD: Children, 4-9y (Approach #1)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "") +
+  geom_hline(yintercept = 9.5, size = 1)
+```
+
+## Feature vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd1.1_49, "children_comb_char") +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "") +
+  geom_hline(yintercept = 9.5, size = 1)
+```
+
+## Singular values
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd1.1_49) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+## Item vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd1.1_49, "children_comb_char") +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+## Plotting in dimensions
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd1.1_49, "children_comb_char", efa_colors = TRUE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "V: Capacities in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd1.1_49, "children_comb_char", efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd1.1_49, "children_comb_char", efa_colors = TRUE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
+```
+
+```{r, fig.width = 4, fig.asp = 1}
+svd1.1_49_rect <- U_fun(svd1.1_49, "children_comb_char") %>%
+  mutate(age_group = ifelse(grepl("79", property), "7-9y",
+                            ifelse(grepl("46", property), "4-6y", NA)),
+         property = gsub("_..$", "", property)) %>%
+  spread(mode, value) %>%
+  group_by(age_group) %>%
+  summarise(min_01 = min(mode_01), max_01 = max(mode_01), 
+            min_02 = min(mode_02), max_02 = max(mode_02),
+            min_03 = min(mode_03), max_03 = max(mode_03)) %>%
+  ungroup() %>%
+  data.frame()
+
+U_fun(svd1.1_49, "children_comb_char") %>%
+  mutate(age_group = ifelse(grepl("79", property), "7-9y",
+                            ifelse(grepl("46", property), "4-6y", NA)),
+         property = gsub("_..$", "", property)) %>%
+  spread(mode, value) %>%
+  ggplot(aes(x = mode_01, y = mode_02, label = property, color = age_group)) +
+  geom_rect(data = svd1.1_49_rect,
+            aes(x = NULL, y = NULL, label = NULL,
+                xmin = min_01, xmax = max_01, ymin = min_02, ymax = max_02,
+                color = age_group, fill = age_group, group = age_group), 
+            alpha = 0.05) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-100, 100, .1)) +
+  scale_y_continuous(breaks = seq(-100, 100, .1)) +
+  ggrepel::geom_text_repel(show.legend = F, size = 3) +
+  theme_minimal() +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "U: Characters in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2", color = "Age Group", fill = "Age Group") #+
+  # coord_equal()
+
+U_fun(svd1.1_49, "children_comb_char") %>%
+  mutate(age_group = ifelse(grepl("79", property), "7-9y",
+                            ifelse(grepl("46", property), "4-6y", NA)),
+         property = gsub("_..$", "", property)) %>%
+  spread(mode, value) %>%
+  ggplot(aes(x = mode_01, y = mode_03, label = property, color = age_group)) +
+  geom_rect(data = svd1.1_49_rect,
+            aes(x = NULL, y = NULL, label = NULL,
+                xmin = min_01, xmax = max_01, ymin = min_03, ymax = max_03,
+                color = age_group, fill = age_group, group = age_group), 
+            alpha = 0.05) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-100, 100, .1)) +
+  scale_y_continuous(breaks = seq(-100, 100, .1)) +
+  ggrepel::geom_text_repel(show.legend = F, size = 3) +
+  theme_minimal() +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3", color = "Age Group", fill = "Age Group") #+
+  # coord_equal()
+
+U_fun(svd1.1_49, "children_comb_char") %>%
+  mutate(age_group = ifelse(grepl("79", property), "7-9y",
+                            ifelse(grepl("46", property), "4-6y", NA)),
+         property = gsub("_..$", "", property)) %>%
+  spread(mode, value) %>%
+  ggplot(aes(x = mode_02, y = mode_03, label = property, color = age_group)) +
+  geom_rect(data = svd1.1_49_rect,
+            aes(x = NULL, y = NULL, label = NULL,
+                xmin = min_02, xmax = max_02, ymin = min_03, ymax = max_03,
+                color = age_group, fill = age_group, group = age_group), 
+            alpha = 0.05) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-100, 100, .1)) +
+  scale_y_continuous(breaks = seq(-100, 100, .1)) +
+  ggrepel::geom_text_repel(show.legend = F, size = 3) +
+  theme_minimal() +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #1)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3", color = "Age Group", fill = "Age Group") #+
+  # coord_equal()
+```
+
+
+# Combination Method #2
+
+## Raw data matrix visualizations
+
+```{r, fig.width = 4, fig.asp = 0.5}
+d_method2 <- d_79 %>%
+  gather(capacity, mean_rating, -character) %>%
+  mutate(capacity = paste0(capacity, "_79")) %>%
+  full_join(d_46 %>%
+              gather(capacity, mean_rating, -character) %>%
+              mutate(capacity = paste0(capacity, "_46"))) %>%
+  spread(capacity, mean_rating)
+
+d_method2 %>%
+  gather(capacity, mean_rating, -character) %>%
+  mutate(capacity = factor(capacity,
+                           levels = c("anger_79", "awareness_79", "choice_79", 
+                                      "depth_79", "embarrassment_79", 
+                                      "fatigue_79", "fear_79", 
+                                      "figuring_out_79", "guilt_79", 
+                                      "happiness_79", "hunger_79", 
+                                      "hurt_feelings_79", "love_79", 
+                                      "memory_79", "nausea_79", "pain_79", 
+                                      "pride_79", "sadness_79", "smell_79", 
+                                      "temperature_79", 
+                                      "anger_46", "awareness_46", "choice_46", 
+                                      "depth_46", "embarrassment_46", 
+                                      "fatigue_46", "fear_46", 
+                                      "figuring_out_46", "guilt_46", 
+                                      "happiness_46", "hunger_46", 
+                                      "hurt_feelings_46", "love_46", 
+                                      "memory_46", "nausea_46", "pain_46", 
+                                      "pride_46", "sadness_46", "smell_46", 
+                                      "temperature_46"))) %>%
+  mutate(age_group = factor(gsub("^.*_", "", capacity))) %>%
+  ggplot(aes(x = capacity, y = character, fill = mean_rating)) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(low = "black", high = "white", # limits = c(0, 1),
+                      guide = guide_colorbar(barheight = 10)) +
+  geom_vline(xintercept = 20.5, size = 1, color = "blue") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        panel.grid = element_blank()) +
+  labs(title = "Raw data: 4- to 9-year-old children",
+       subtitle = "9 characters, 20 capacities",
+       x = "Capacity", y = "Character",
+       fill = "Mean Rating")
+```
+
+## SVD
+
+```{r}
+svd1.2_49 <- svd(d_method2 %>% column_to_rownames("character"), 
+               nrow(d_79) + nrow(d_46), nrow(d_79) + nrow(d_46))
+```
+
+## Reconstructed data
+
+```{r, fig.width = 4, fig.asp = 0.5}
+plot_reconstruct_fun(svd1.2_49, "children_comb_cap") +
+  labs(title = "SVD: Children, 4-9y (Approach #2)",
+       subtitle = "Reconstructed dataset: Sum of outer products (U, V) multiplied by S",
+       x = "", y = "") +
+  geom_vline(xintercept = 20.5, size = 1) +
+  guides(fill = guide_colorbar(barheight = 10))
+```
+
+## Feature vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_U_fun(svd1.2_49, "children_comb_cap") +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "U: Feature vectors (by mode)",
+       # subtitle = "U x S: Feature vectors multiplied by singular value (by mode)",
+       x = "", y = "")
+```
+
+## Singular values
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_S_fun(svd1.2_49) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "S: Singular values (by mode)",
+       x = "", y = "")
+```
+
+## Item vectors
+
+```{r, fig.width = 3, fig.asp = 1}
+plot_V_fun(svd1.2_49, "children_comb_cap", transpose = FALSE, multiply = FALSE) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "V: Item vectors (by mode)",
+       # subtitle = "V x S: Item vectors multiplied by singular value (by mode)",
+       x = "", y = "") +
+  geom_hline(yintercept = 20.5, size = 1)
+```
+
+## Plotting in dimensions
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_V_fun_item(svd1.2_49, "children_comb_cap", efa_colors = TRUE, 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "V: Capacities in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2")
+
+plot_V_fun_item(svd1.2_49, "children_comb_cap", efa_colors = TRUE,
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_V_fun_item(svd1.2_49, "children_comb_cap", efa_colors = TRUE, 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
+```
+
+```{r, fig.width = 4, fig.asp = 1}
+svd1.2_49_rect <- V_fun(svd1.2_49, "children_comb_cap") %>%
+  mutate(age_group = ifelse(grepl("79", item), "7-9y",
+                            ifelse(grepl("46", item), "4-6y", NA)),
+         item = gsub("_..$", "", item)) %>%
+  spread(mode, value) %>%
+  group_by(age_group) %>%
+  summarise(min_01 = min(mode_01), max_01 = max(mode_01), 
+            min_02 = min(mode_02), max_02 = max(mode_02),
+            min_03 = min(mode_03), max_03 = max(mode_03)) %>%
+  ungroup() %>%
+  data.frame()
+
+V_fun(svd1.2_49, "children_comb_cap") %>%
+  mutate(age_group = ifelse(grepl("79", item), "7-9y",
+                            ifelse(grepl("46", item), "4-6y", NA)),
+         item = gsub("_..$", "", item)) %>%
+  spread(mode, value) %>%
+  full_join(efa_colors_79, by = c("item" = "capacity")) %>%
+  ggplot(aes(x = mode_01, y = mode_02, label = item)) +
+  geom_rect(data = svd1.2_49_rect,
+            aes(x = NULL, y = NULL, label = NULL,
+                xmin = min_01, xmax = max_01, ymin = min_02, ymax = max_02,
+                color = age_group, fill = age_group, group = age_group), 
+            alpha = 0.05) +
+  geom_point(aes(color = factor, shape = age_group)) +
+  scale_color_manual(values = c("#f8766d", "#00bfc4",
+                                "#377eb8", "#4daf4a", "#e41a1c")) +
+  scale_x_continuous(breaks = seq(-100, 100, .1)) +
+  scale_y_continuous(breaks = seq(-100, 100, .1)) +
+  ggrepel::geom_text_repel(show.legend = F, size = 3) +
+  theme_minimal() +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "V: Capacities in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2",
+       color = "Age Group/Factor", fill = "Age Group", shape = "Age Group") #+
+  # coord_equal()
+
+V_fun(svd1.2_49, "children_comb_cap") %>%
+  mutate(age_group = ifelse(grepl("79", item), "7-9y",
+                            ifelse(grepl("46", item), "4-6y", NA)),
+         item = gsub("_..$", "", item)) %>%
+  spread(mode, value) %>%
+  full_join(efa_colors_79, by = c("item" = "capacity")) %>%
+  ggplot(aes(x = mode_01, y = mode_03, label = item)) +
+  geom_rect(data = svd1.2_49_rect,
+            aes(x = NULL, y = NULL, label = NULL,
+                xmin = min_01, xmax = max_01, ymin = min_03, ymax = max_03,
+                color = age_group, fill = age_group, group = age_group), 
+            alpha = 0.05) +
+  geom_point(aes(color = factor, shape = age_group)) +
+  scale_color_manual(values = c("#f8766d", "#00bfc4",
+                                "#377eb8", "#4daf4a", "#e41a1c")) +
+  scale_x_continuous(breaks = seq(-100, 100, .1)) +
+  scale_y_continuous(breaks = seq(-100, 100, .1)) +
+  ggrepel::geom_text_repel(show.legend = F, size = 3) +
+  theme_minimal() +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "V: Capacities in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3",
+       color = "Age Group/Factor", fill = "Age Group", shape = "Age Group") #+
+  # coord_equal()
+
+V_fun(svd1.2_49, "children_comb_cap") %>%
+  mutate(age_group = ifelse(grepl("79", item), "7-9y",
+                            ifelse(grepl("46", item), "4-6y", NA)),
+         item = gsub("_..$", "", item)) %>%
+  spread(mode, value) %>%
+  full_join(efa_colors_79, by = c("item" = "capacity")) %>%
+  ggplot(aes(x = mode_02, y = mode_03, label = item)) +
+  geom_rect(data = svd1.2_49_rect,
+            aes(x = NULL, y = NULL, label = NULL,
+                xmin = min_02, xmax = max_02, ymin = min_03, ymax = max_03,
+                color = age_group, fill = age_group, group = age_group), 
+            alpha = 0.05) +
+  geom_point(aes(color = factor, shape = age_group)) +
+  scale_color_manual(values = c("#f8766d", "#00bfc4",
+                                "#377eb8", "#4daf4a", "#e41a1c")) +
+  scale_x_continuous(breaks = seq(-100, 100, .1)) +
+  scale_y_continuous(breaks = seq(-100, 100, .1)) +
+  ggrepel::geom_text_repel(show.legend = F, size = 3) +
+  theme_minimal() +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "V: Capacities in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3",
+       color = "Age Group/Factor", fill = "Age Group", shape = "Age Group") #+
+  # coord_equal()
+```
+
+```{r, fig.width = 4, fig.asp = 1}
+plot_U_fun_prop(svd1.2_49, "children_comb_cap", 
+                modes = c("mode_01", "mode_02")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "U: Characters in Modes 1 & 2",
+       x = "Mode 1", y = "Mode 2")
+
+plot_U_fun_prop(svd1.2_49, "children_comb_cap", 
+                modes = c("mode_01", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "U: Characters in Modes 1 & 3",
+       x = "Mode 1", y = "Mode 3")
+
+plot_U_fun_prop(svd1.2_49, "children_comb_cap", 
+                modes = c("mode_02", "mode_03")) +
+  labs(title = "SVD: Children, 4-9y (Approach #1, Comb. Method #2)",
+       subtitle = "U: Characters in Modes 2 & 3",
+       x = "Mode 2", y = "Mode 3")
+```
+
+
