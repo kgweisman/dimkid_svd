@@ -447,4 +447,10 @@ plot_U_fun_prop(svd1.2_49, "children_comb_cap",
        x = "Mode 2", y = "Mode 3")
 ```
 
+# Conclusions
 
+My sense here is that the first method for combining age groups - distinguishing between younger and older assessments of characters, rather than of capacities - is easier to make sense of and yields a more sensible set of conclusions. Namely, relative to older children (7-9y), younger children (4-6y):
+
+- __Make *slightly* less use of the first "mode,"__ which in this solution seems to do the mean-centering (and, as a result, capture the distinction between animate and inanimate characters). This could reflect a less stark animate-inanimate distinction, or (more likely, in my eyes) more "noise" in the data among younger children.
+- __Make substantially less use of the second "mode,"__ which in this solution seems to distinguish between cognitive (MIND) and non-cognitive (BODY & HEART) mental capacities. I'm not yet sure what it means that they are also shifted "up" on this dimension, relative to older children.
+- __Make substantially less use of the third "mode,"__ which in this solution seems to distinguish between physiological (BODY) and social-emotional (HEART) mental capacities. Again, I'm not yet sure what it means that they are also shifted "up" on this dimension, relative to older children.
