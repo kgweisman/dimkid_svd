@@ -41,8 +41,8 @@ mean_cent_fun <- function(df,
 
 U_fun <- function(svd,
                   age_group = c("adults", "children", "children_comb"),
-                  transpose = c(FALSE, TRUE),
-                  multiply = c(FALSE, TRUE)){
+                  transpose = FALSE,
+                  multiply = FALSE){
   
   if(transpose == FALSE) {
     if(age_group == "adults"){y_names <- character_names_ad}
@@ -83,8 +83,8 @@ U_fun <- function(svd,
 
 plot_U_fun <- function(svd,
                        age_group = c("adults", "children", "children_comb"),
-                       transpose = c(FALSE, TRUE),
-                       multiply = c(FALSE, TRUE)){
+                       transpose = FALSE,
+                       multiply = FALSE){
   
   df_final <- U_fun(svd, age_group, transpose, multiply)
   
@@ -192,8 +192,8 @@ plot_S_fun <- function(svd){
 
 V_fun <- function(svd,
                   age_group = c("adults", "children", "children_comb"),
-                  transpose = c(FALSE, TRUE),
-                  multiply = c(FALSE, TRUE)){
+                  transpose = FALSE,
+                  multiply = FALSE){
   
   if(transpose == FALSE) {
     if(age_group == "adults"){y_names <- capacity_names_ad}
@@ -233,8 +233,8 @@ V_fun <- function(svd,
 
 plot_V_fun <- function(svd,
                        age_group = c("adults", "children", "children_comb"),
-                       transpose = c(FALSE, TRUE),
-                       multiply = c(FALSE, TRUE)){
+                       transpose = FALSE,
+                       multiply = FALSE){
   
   df_final <- V_fun(svd, age_group, transpose, multiply)
   
@@ -315,7 +315,7 @@ plot_V_fun_item <- function(svd,
 
 reconstruct_fun <- function(svd,
                             age_group = c("adults", "children", "children_comb"),
-                            transpose = c(FALSE, TRUE)){
+                            transpose = FALSE){
   
   if(age_group == "adults"){
     capacity_names <- capacity_names_ad
@@ -362,7 +362,7 @@ reconstruct_fun <- function(svd,
 plot_reconstruct_fun <- function(svd,
                                  age_group = c("adults", 
                                                "children", "children_comb"),
-                                 transpose = c(FALSE, TRUE)){
+                                 transpose = FALSE){
   
   OP_sum <- reconstruct_fun(svd, age_group, transpose)
   
